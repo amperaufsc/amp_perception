@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lidar_filtering</name>
+  <version>0.0.0</version>
+  <description>Pacote para processar nuvens de pontos do sensor Ouster.</description>
+  <maintainer email="lucas.sm.souza@gmail.com">lucasmoro</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- Ferramenta de build -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Dependências C++ -->
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>cv_bridge</depend>
+  <depend>OpenCV</depend>
+  <depend>yaml-cpp</depend>
+  <depend>message_filters</depend>
+
+  <!-- Testes -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
