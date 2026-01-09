@@ -1,0 +1,26 @@
+repositories:
+
+  fs_msgs:
+    type: git
+    url: https://github.com/amperaufsc/fs_msgs.git
+    version: ros2
+  
+  passive_stereo:
+    type: git
+    url: https://github.com/amperaufsc/passive_stereo.git
+    version: master
+
+  depthai-ros:
+    type: git
+    url: https://github.com/amperaufsc/depthai-ros.git
+    version: humble
+
+  ouster-ros:
+    type: git
+    url: https://github.com/amperaufsc/lidarOS1-drivers.git
+    version: ros2
+  
+  smacc2:
+    type: git
+    url: https://github.com/robosoft-ai/SMACC2
+    version: humble
