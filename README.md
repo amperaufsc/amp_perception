@@ -56,19 +56,6 @@ The repository standardizes detection outputs at the ROS 2 interface level, ensu
 
 ---
 
-
-# Coordinate Frames
-
-Common frames in use:
-
-- `map` – global SLAM / mapping frame
-- `/fsds/map` – fsds frame 
-- `base_link` – vehicle base frame (control reference)
-
-Frame transforms are managed through TF2.
-
----
-
 # Dependencies
 
 Core dependencies (minimum):
@@ -81,7 +68,6 @@ Core dependencies (minimum):
 
 ---
 
-
 ## Commands for compiling packages 
 
 ### For compiling both, use: 
@@ -91,31 +77,48 @@ Core dependencies (minimum):
 
 ### For compiling individualy, use: 
 ```bash
-    colcon build --packages-select ros2_path_planning
+    colcon build --packages-select yolobot_recognition
    ```
 ```bash
-    colcon build --packages-select ros2_control
+    colcon build --packages-select yolov8_msgs
+   ```
+
+```bash
+    colcon build --packages-select perception
+   ```
+```bash
+    colcon build --packages-select lidar_filtering
    ```
 
 
 ## Running & Launching
 
-### Path Planning launchs: 
+### LiDAR launchs: 
 
 ```bash
-    ros2 run ros2_path_planning path_node.py
+    ros2 run lidar_filtering lidar_fusion.py
    ```
 
 ```bash
-    ros2 launch ros2_path_planning path_planning.launch.py
+    ros2 launch lidar_filtering camera_lidar.launch.py
    ```
 
-### Control launchs: 
+### Perception launchs: 
 
 ```bash
-    ros2 run ros2_control control_node.py
+    ros2 run perception depthai_camera_publisher.py
    ```
 
 ```bash
-    ros2 launch ros2_control control.launch.py
+    ros2 launch perception amp_depthai.launch.py
+   ```
+
+### Yolo launchs: 
+
+```bash
+    ros2 run yolobot_recognition yolov8_ros2_pt.py
+   ```
+
+```bash
+    ros2 launch yolobot_recognition launch_yolov8.launch.py
    ```
