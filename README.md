@@ -26,14 +26,6 @@ The repository standardizes detection outputs at the ROS 2 interface level, ensu
 
 ---
 
-self.rgb_publisher = self.create_publisher(Image, '/camera/rgb/image_raw', 10)
-        self.disparity_map = self.create_publisher(DisparityImage, '/disparity_msg', 10)
-        self.detection_publisher = self.create_publisher(Track, '/track', 10)
-        self.position_publisher = self.create_publisher(Cone, '/cone', 10) 
-        self.publishers_point_clound = self.create_publisher(PointCloud2, '/point_clound',10)
-        self.monoLeft_publisher = self.create_publisher(Image, '/camera/left/image_raw',10)
-        self.monoRight_publisher = self.create_publisher(Image, '/camera/right/image_raw',10)
-
 ## Topics (Perception)
 
 | Module           | Direction | Topic                     | Message Type                 | Notes |
@@ -55,12 +47,10 @@ self.rgb_publisher = self.create_publisher(Image, '/camera/rgb/image_raw', 10)
 
 | Module           | Direction | Topic                     | Message Type                 | Notes |
 |------------------|-----------|---------------------------|-------------------------------|-------|
-| Path Planning     | Sub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Path Planning     | Sub       | `/mission/go_signal`      | `std_msgs/Bool`               | Trigger for planning |
-| Path Planning     | Sub       | `/track`      | `nav_msgs/Track`               | Track input |
-| Path Planning     | Pub       | `/path`  | `fsds_msgs/Path`      | Reference path |
-| Path Planning     | Pub       | `/path_concatenated`  | `nav_msgs/Path`      | Reference path (Control input) |
-| Path Planning     | Pub       | `/track_pointcloud`  | `nav_msgs/PointCloud2`      | Track for debugging |
+| Yolo     | Sub       | `/Yolov8_Inference`                   | `yolov8_msgs/Yolov8Inference`     | Inference input |
+| Yolo     | Sub       | `/rgb_cam/image_raw`                   | `sensor_msgs/Image`     | Image input |
+| Yolo     | Pub       | `/inference_result_cv2`                   | `sensor_msgs/Image`     | Inference output |
+| Yolo     | Pub       | `/inferenceimg`                   | `sensor_msgs/Image`     | Image output |
 
 > Topics and messages used in Yolo package.
 
