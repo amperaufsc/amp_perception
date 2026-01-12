@@ -1,4 +1,4 @@
-### Perception 
+# Perception 
 This repository groups the perception packages responsible for cone detection within the ROS 2 stack. These packages process raw sensor data and publish cone detections as structured ROS 2 messages for downstream modules (e.g., mapping and path planning).
 
 ## The perception modules are designed to:
@@ -38,12 +38,14 @@ self.rgb_publisher = self.create_publisher(Image, '/camera/rgb/image_raw', 10)
 
 | Module           | Direction | Topic                     | Message Type                 | Notes |
 |------------------|-----------|---------------------------|-------------------------------|-------|
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
-| Perception     | Pub       | `/odom`                   | `sensor_msgs/Odom`     | Odometry input |
+| Perception     | Pub       | `/camera/rgb/image_raw`                   | `sensor_msgs/Image`     | Image Output |
+| Perception     | Pub       | `/disparity_msg`                   | `estereo_msgs/DisparityImage`     | Disparity Output |
+| Perception     | Pub       | `/track`                   | `fsds_msgs/Track`     | Track Output |
+| Perception     | Pub       | `/cone`                   | `fsds_msgs/Cone`     | Cone msg Output |
+| Perception     | Pub       | `/point_clound`                   | `sensor_msgs/PointCloud2`     | PointCloud2 Output |
+| Perception     | Pub       | `/camera/left/image_raw`                   | `sensor_msgs/Image`     | Left camera image |
+| Perception     | Pub       | `/camera/right/image_raw`                   | `sensor_msgs/Image`     | Right camera image |
+
 
 > Topics and messages used in Perception package.
 
