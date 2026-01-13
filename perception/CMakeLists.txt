@@ -16,32 +16,32 @@ find_package(yolov8_msgs REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-install(
-        PROGRAMS
-        ros2/position_estimator.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+# install(
+#         PROGRAMS
+#         ros2/position_estimator.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
 install(
         PROGRAMS
         ros2/lifecycle_dpe.py
         DESTINATION lib/${PROJECT_NAME}
 )
-install(
-        PROGRAMS
-        ros2/depthai_position_estimator.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        ros2/test_node.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+# install(
+#         PROGRAMS
+#         ros2/depthai_position_estimator.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
+# install(
+#         PROGRAMS
+#         ros2/test_node.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
 
-install(
-        PROGRAMS
-        ros2/camera_info_pub.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+# install(
+#         PROGRAMS
+#         ros2/camera_info_pub.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
 
 install(
         DIRECTORY
@@ -55,17 +55,17 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
-install(
-        PROGRAMS
-        position_estimation/stereo_pipeline.py
-        position_estimation/keypoints_estimator.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS 
-        ros2/lifecycle_dpe_v1.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+# install(
+#         PROGRAMS
+#         position_estimation/stereo_pipeline.py
+#         position_estimation/keypoints_estimator.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
+# install(
+#         PROGRAMS 
+#         ros2/lifecycle_dpe_v1.py
+#         DESTINATION lib/${PROJECT_NAME}
+# )
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
