@@ -21,11 +21,7 @@ install(
         ros2/position_estimator.py
         DESTINATION lib/${PROJECT_NAME}
 )
-install(
-        PROGRAMS
-        ros2/lifecycle_dpe.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+
 install(
         PROGRAMS
         ros2/depthai_position_estimator.py
@@ -61,11 +57,7 @@ install(
         position_estimation/keypoints_estimator.py
         DESTINATION lib/${PROJECT_NAME}
 )
-install(
-        PROGRAMS 
-        ros2/lifecycle_dpe_v1.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
