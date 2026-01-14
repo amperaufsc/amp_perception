@@ -33,9 +33,9 @@
 
 ---
 
-# ROS Interfaces
+## ROS Interfaces
 
-## Topics (Perception)
+### Topics (Perception)
 
 | Module           | Direction | Topic                     | Message Type                 | Notes |
 |------------------|-----------|---------------------------|-------------------------------|-------|
@@ -49,7 +49,7 @@
 
 ---
 
-# Dependencies
+## Dependencies
 
 Core dependencies (minimum):
 
@@ -61,13 +61,13 @@ Core dependencies (minimum):
 
 ---
 
-## For compiling, use: 
+### For compiling, use: 
 
 ```bash
     colcon build --packages-select perception
    ```
 
-## For launch, use: 
+### For launch, use: 
 
 ```bash
     ros2 run perception depthai_camera_publisher.py
@@ -76,3 +76,35 @@ Core dependencies (minimum):
 ```bash
     ros2 launch perception amp_depthai.launch.py
    ```
+## Setup camera Luxonis OAK-D-LR
+
+### Dependencies
+  To install the necessary dependencies, simply run `OAK_D_LR_Setup`. Do not forget to check the name of your system's ROS 2 workspace; by default, it is set to ws. If that is not your case, change it.
+
+  *OAK_D_LR_Setup:*
+```bash
+    cd ws/src/
+    git clone --branch humble https://github.com/luxonis/depthai-ros.git
+    cd ..
+    sudo apt update
+    rosdep update
+    rosdep install --from-paths src --ignore-src -r -y
+    source /opt/ros/humble/setup.bash
+    MAKEFLAGS="-j1 -l1" colcon build
+    source install/setup.bash
+```
+  
+  After installing `OAK_D_LR_Setup`, simply run the launcher to start the camera and publish the topics
+
+  *Camera launcher:*
+```bash
+    source install/setup.bash	
+    ros2 launch depthai_ros_driver camera.launch.py 
+```
+
+#### Source: https://docs.luxonis.com/software/ros/depthai-ros/build/
+
+### Parameter
+  Parameters are essential for operation, defining, for example, which topics will be published or the specific configurations under which the camera will operate. To change them, simply navigate to the `/ws/src/depthai-ros/depthai_ros_driver/config` package and modify the `camera.yaml` file.
+
+#### Source and Parameters: https://docs.luxonis.com/software/ros/depthai-ros/driver/
