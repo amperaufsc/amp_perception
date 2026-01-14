@@ -77,7 +77,6 @@ public:
     for (int i = 0; i < 9; ++i)
       R(i / 3, i % 3) = rot_data[i];
 
-    Eigen::Vector3f t;
     for (int i = 0; i < 3; ++i)
       t(i) = trans_data[i];
 
@@ -105,7 +104,6 @@ private:
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
       
-      int iterador = 0;
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
@@ -113,20 +111,14 @@ private:
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
-
-      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
-
-      //cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");  
       
-      //std::vector<uint8_t> color_bin;                  
       fs_msgs::msg::TrackStamped track_final;
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
     
-      //RCLCPP_INFO(this->get_logger(), "Imagem: %d x %d", image_msg->width, image_msg->height);
       cloud_final->points.clear();
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
@@ -160,6 +152,11 @@ private:
         }
         cone = clusterize(cloud_aux, inf.class_name);
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
+          // Desloca o cone pra posição relativa da camera
+          cone.location.x += t(0);
+          cone.location.y += t(1);
+          cone.location.z += t(3);
+
           track_final.track.push_back(cone);
         }
         cloud_aux->points.clear();
@@ -177,9 +174,6 @@ private:
 
     pub_track->publish(track_final);
     
-    // CONVERSAO OPENCV PRA ROS2 IMAGE
-    // auto image_msg_painted = cv_ptr->toImageMsg();
-    // pub_image->publish(*image_msg_painted);
   }
 
   fs_msgs::msg::Cone clusterize(
@@ -231,7 +225,7 @@ private:
       }
 
       if (vals.empty())
-          return 0.0;  // ou trate como quiser
+          return 0.0;
 
       std::sort(vals.begin(), vals.end());
 
@@ -245,12 +239,12 @@ private:
 
   Eigen::Matrix4f RT;
   Eigen::Matrix<float, 3, 4> camera_matrix; 
+  Eigen::Vector3f t;
   message_filters::Subscriber<sensor_msgs::msg::PointCloud2> sub_pointcloud;
   message_filters::Subscriber<yolov8_msgs::msg::Yolov8Inference> sub_inference;
   std::shared_ptr<Synchronizer<MySyncPolicy>> sync_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_pointcloud;
   rclcpp::Publisher<fs_msgs::msg::TrackStamped>::SharedPtr pub_track;
-  //rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_image;
 };
 
 int main(int argc, char** argv) {
@@ -260,16 +254,3 @@ int main(int argc, char** argv) {
   rclcpp::shutdown();
   return 0;
 }
-
-// if (u >= inf.top + (inf.bottom-inf.top)/3 && u <= inf.bottom - (inf.bottom-inf.top)/3  && 
-//           v >= inf.left + (inf.right - inf.left)/2 && v <= inf.right) 
-//136
-
-// cone.position.x = highest_point.x;
-//     cone.position.y = highest_point.y;
-//     cone.position.z = highest_point.z;
-//     cone.color = (inf.class_name == "yellow_cone")
-//                    ? fs_msgs::msg::Cone::YELLOW
-//                    : fs_msgs::msg::Cone::BLUE;
-
-//     track.track.push_back(cone);
