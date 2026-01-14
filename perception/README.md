@@ -153,15 +153,12 @@ If you get the error 'Insufficient permissions to communicate with X_LINK_BOOTLO
           i_lr_check: true
           i_lrc_threshold: 5
           i_max_q_size: 4
-    
           i_enable_brightness_filter: false
           i_enable_decimation_filter: false
           i_enable_spatial_filter: false
           i_enable_speckle_filter: false
           i_enable_temporal_filter: false
-    
           i_stereo_conf_threshold: 240
-    
           i_publish_topic: true
 ```
 
