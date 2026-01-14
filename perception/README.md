@@ -101,6 +101,13 @@ Core dependencies (minimum):
     source install/setup.bash	
     ros2 launch depthai_ros_driver camera.launch.py 
 ```
+#### Possible lauch error
+If you get the error 'Insufficient permissions to communicate with X_LINK_BOOTLOADER device with name "3.3". Make sure udev rules are set' when running the launcher, it means the USB port is blocked. If this happens, cancel the launch, run the codes below, and then disconnect and reconnect the USB cable.
+
+```bash
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
+    sudo udevadm control --reload-rules && sudo udevadm trigger
+```
 
 #### Source: https://docs.luxonis.com/software/ros/depthai-ros/build/
 
