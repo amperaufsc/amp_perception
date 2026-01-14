@@ -50,7 +50,7 @@ Within this function, the node’s main callback is called.
 
 ### on_shutdown
 
-Within this callback, the node enters a frozen state, where it no longer executes any logic, requiring the node to be restarted in such cases.
+Within this function, the node enters a frozen state, where it no longer executes any logic, requiring the node to be restarted in such cases.
 
 
 
