@@ -41,13 +41,12 @@ Within the already existing callbacks, the changes are minimal. The main differe
 
 ### on_configure:
 
-Within this callback, the node’s parameters and publishers are declared.
+Within this function, the node’s parameters, subscribers and publishers are declared.
 
 
 ### on_activate:
 
-Within this callback, the node’s subscribers are declared.
-
+Within this function, the node’s main callback is called.
 
 ### on_shutdown
 
