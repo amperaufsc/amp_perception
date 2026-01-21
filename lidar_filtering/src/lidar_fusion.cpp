@@ -25,22 +25,25 @@
 #include <cmath>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/search/kdtree.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
 
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
 
-struct Cluster {
-    std::vector<pcl::PointXYZ> points;
-};
-
 using namespace message_filters;
+
+// cria um apelido menor (MySyncPolicy)
 typedef sync_policies::ApproximateTime<
     sensor_msgs::msg::PointCloud2,
-    yolov8_msgs::msg::Yolov8Inference> MySyncPolicy;
+    yolov8_msgs::msg::Yolov8Inference> MySyncPolicy; 
+
 
 class PointCloudHandler : public rclcpp::Node {
 public:
-  PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
+
+  // Construtor 
+  PointCloudHandler() : rclcpp::Node("lidar_fusion")
   , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
   , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
 
@@ -52,34 +55,40 @@ public:
                 this,
                 std::placeholders::_1,
                 std::placeholders::_2));
+    
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
 
-    std::string path_intrinsic = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    // Carrega os yaml's
+    std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_intrinsic.yaml";
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_extrinsic.yaml";
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
+    // Carrega cada matriz especificada do yaml
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
     auto trans_data = config_extrinsic["translation_matrix"]["data"].as<std::vector<float>>();
     auto rrect_data = config_intrinsic["rectification_matrix"]["data"].as<std::vector<float>>();
     auto proj_data = config_intrinsic["projection_matrix"]["data"].as<std::vector<float>>();
 
+
+    // Carrega as matrizes em matrizes da biblioteca Eigen, permitindo manipulação 
     Eigen::Matrix4f R_rect;
     for (int i = 0; i < 16; ++i)
-      R_rect(i / 4, i % 4) = rrect_data[i];
+      R_rect(i / 4, i % 4) = rrect_data[i]; // Matriz de rectificação
 
     Eigen::Matrix<float, 3, 4> P;
     for (int i = 0; i < 12; ++i)
-      P(i / 4, i % 4) = proj_data[i];
+      P(i / 4, i % 4) = proj_data[i]; // Matriz de projeção
 
     Eigen::Matrix3f R;
     for (int i = 0; i < 9; ++i)
-      R(i / 3, i % 3) = rot_data[i];
+      R(i / 3, i % 3) = rot_data[i]; // Matriz de rotação
 
     for (int i = 0; i < 3; ++i)
-      t(i) = trans_data[i];
+      t(i) = trans_data[i]; // Matriz de translação
 
+    // Cria a matriz RT (Concatenação de R e T)
     RT = Eigen::Matrix4f::Identity();
     RT.block<3,3>(0,0) = R;
     RT.block<3,1>(0,3) = t;
@@ -94,29 +103,30 @@ public:
 
     // Aplica essa rotação adicional
     RT = lidar_to_cam_fix * RT;
-    camera_matrix = P * R_rect * RT;
 
-    RCLCPP_INFO(this->get_logger(), "Transform loaded from YAML.");
-    std::cout<<RT<<std::endl;
+    // Matriz final
+    camera_matrix = P * R_rect * RT;
   }
 
 private:
+    // Callback principal. Recebe uma pointcloud crua do LiDAR e uma inferencia
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
-      
+
+      // Transforma a mensagem ROS2 da pointcloud em uma pointcloud da biblioteca pcl
+      // permitindo quaisquer manipulações na pointcloud                  
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
-      //declara uma pointcloud vazia que vai ser a que será publicada
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
-      cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
-      cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
-      
+      //declara uma pointcloud (pcl) vazia que vai ser a que será publicada
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
+      // mensagem de track que sera publicada
       fs_msgs::msg::TrackStamped track_final;
+
+      // pointcloud pcl auxiliar
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
     
       cloud_final->points.clear();
