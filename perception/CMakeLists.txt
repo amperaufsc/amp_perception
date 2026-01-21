@@ -18,29 +18,6 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
-        sim_dispmap/disp_map_show.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/perception_calc.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-        PROGRAMS
-        sim_dispmap/track_validation.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-        PROGRAMS
-        sim_dispmap/cone_track_node.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-        PROGRAMS
         ros2/position_estimator.py
         DESTINATION lib/${PROJECT_NAME}
 )
@@ -60,12 +37,6 @@ install(
 install(
         PROGRAMS
         ros2/camera_info_pub.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-        DIRECTORY
-        sim_dispmap
         DESTINATION lib/${PROJECT_NAME}
 )
 
