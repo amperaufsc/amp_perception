@@ -21,7 +21,7 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            '/fsds/cam2/image_color',
+            'image',
             self.camera_callback,  
             10)
         self.subscription 
