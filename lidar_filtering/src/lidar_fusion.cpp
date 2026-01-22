@@ -27,10 +27,13 @@
 #include <pcl/search/kdtree.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+// LOGICA DA FUSÃO ENTRE CAMERA E LIDAR BASEADO INTEIRAMENTE NO ARTIGO ABAIXO:
+// TechLabs Aachen - Visual & LiDAR-based Tracking of Traffic Cones (2021)
+// https://techlabs-aachen.medium.com/visual-lidar-based-tracking-of-traffic-cones-20e83f6067f8
 
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
-#define MAX_DISTANCE
+#define MAX_DISTANCE 0.02
 
 using namespace message_filters;
 
@@ -169,7 +172,7 @@ private:
         // sendo projetados no chão e nao no cone
         for (const auto& point : cloud_filt->points) {
           
-          if (point.z >= highest_point.z - 0.02) {
+          if (point.z >= highest_point.z - MAX_DISTANCE) {
 
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
@@ -250,7 +253,7 @@ private:
 
       return cone_out;
   }
-  
+
   // funcao chamada dentro de clusterize que de fato faz a mediana de cada eixo
   double mediana_coord(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, char coord) {
       std::vector<float> vals;
