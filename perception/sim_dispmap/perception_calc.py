@@ -1,5 +1,5 @@
 import numpy as np
-from fs_msgs.msg import TrackStamped, Track, Cone
+from fs_msgs.msg import TrackStampedWithCovariance, Track, ConeWithCovariance
 import os
 import yaml
 import cv2
@@ -27,8 +27,9 @@ class PerceptionProcess:
         bb_yolo = yoloinference.yolov8_inference
         
         for box in bb_yolo:
-            cone = Cone()
+            cone = ConeWithCovariance()
             cor = box.class_name
+            confidence = box.confidence
             
             if cor == 'blue_cone':
                 cone.color=0
@@ -48,7 +49,7 @@ class PerceptionProcess:
             bb_w = x2-x1
             bb_h = y2-y1
             
-            sample_w = max(1, (bb_w * 0.2)//2)
+            sample_w = max(1, (bb_w * 0.15)//2)
             sample_h = max(1, (bb_h * 0.2)//2)
             
             obj_x1 = int(max(0, center_x - sample_w))
@@ -68,9 +69,16 @@ class PerceptionProcess:
                 cone.location.x = X
                 cone.location.y = Y
                 cone.location.z = Z
-                if cone.location.z < 20:
-                    cone_list.append(cone)      
-        cone_track = Track()
+            
+                deviationZ = 0.0096*cone.location.z + 0.1643   #linearização do erro da detecção vs distancia no eixo z
+                deviationX = 0.0232*cone.location.x + 0.1204   #linearização do erro da detecção vs distancia no eixo x
+                deviation = np.sqrt(deviationX**2 + deviationZ**2)   
+                
+                cone.deviation = deviation
+                cone.confidence = confidence
+                cone_list.append(cone)
+                
+        cone_track = TrackStampedWithCovariance()
         cone_track.track = cone_list
 
         return (cone_track, median_disp)
@@ -93,11 +101,6 @@ class PerceptionProcess:
             return float(X), float(Y), float(Z)
         else:
             return 0.0, 0.0, 0.0
-    
-    def monocular_measure(self, center_x, center_y, cone_height, bb_h):
-        Z = (self.focal_length_x  * cone_height) / bb_h
-        X, Y = self.x_y_space_measure(Z, center_x, center_y)
-        return X, Y, Z
     
     def approximate_stereo_rectify(self, imgL, imgR):
         

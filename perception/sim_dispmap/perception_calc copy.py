@@ -38,7 +38,7 @@ class PerceptionProcess:
             median_disp = np.median(valid)
             
             if median_disp >= 85:
-                X,Y,Z = self.triangulacao(pixel_y, pixel_x, median_disp, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+                Y,X,Z = self.triangulacao(pixel_y, pixel_x, median_disp, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
                 cone.location.x = X
                 cone.location.y = Y
                 cone.location.z = Z
