@@ -105,7 +105,6 @@ private:
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
       
-      int iterador = 0;
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
@@ -114,7 +113,6 @@ private:
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
 
-      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
@@ -158,7 +156,7 @@ private:
             cloud_aux->points.push_back(point);
           }
         }
-        cone = clusterize(cloud_aux, inf.class_name);
+        cone = clusterize(highest_point, inf.class_name);
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
           track_final.track.push_back(cone);
         }
@@ -182,30 +180,14 @@ private:
     // pub_image->publish(*image_msg_painted);
   }
 
-  fs_msgs::msg::Cone clusterize(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_aux,
-    const std::string& cone_class)
+  fs_msgs::msg::Cone clusterize(const pcl::PointXYZ highest_point, const std::string& cone_class)
   {
       fs_msgs::msg::Cone cone_out;
 
-      // Se não tem ponto, retorna cone UNKNOWN em (0,0,0)
-      if (cloud_aux->points.size() <= 0) {
-          cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
-          return cone_out;
-      }
-
-      float mx = mediana_coord(cloud_aux, 'x');
-      float my = mediana_coord(cloud_aux, 'y');
-      float mz = mediana_coord(cloud_aux, 'z');
       // Preenche cone_out
-      cone_out.location.x = mx;
-      cone_out.location.y = my;
-      cone_out.location.z = mz;
-
-      if (mx == 0.0 || my == 0.0 || mz == 0.0){
-        cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
-        return cone_out;
-      }
+      cone_out.location.x = highest_point.x;
+      cone_out.location.y = highest_point.y;
+      cone_out.location.z = highest_point.z;
 
       if (cone_class == "yellow_cone")
           cone_out.color = fs_msgs::msg::Cone::YELLOW;
@@ -217,31 +199,6 @@ private:
       return cone_out;
   }
 
-  double mediana_coord(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, char coord) {
-      std::vector<float> vals;
-      vals.reserve(cloud->size());
-
-      for (const auto& p : cloud->points) {
-          switch (coord) {
-              case 'x': vals.push_back(p.x); break;
-              case 'y': vals.push_back(p.y); break;
-              case 'z': vals.push_back(p.z); break;
-              default: throw std::runtime_error("coord inválido (use 'x', 'y' ou 'z')");
-          }
-      }
-
-      if (vals.empty())
-          return 0.0;  // ou trate como quiser
-
-      std::sort(vals.begin(), vals.end());
-
-      int n = vals.size();
-      if (n % 2 == 1) {
-          return vals[n / 2];
-      } else {
-          return (vals[n/2 - 1] + vals[n/2]) / 2.0;
-      }
-  }
 
   Eigen::Matrix4f RT;
   Eigen::Matrix<float, 3, 4> camera_matrix; 
