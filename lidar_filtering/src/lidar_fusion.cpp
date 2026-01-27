@@ -25,22 +25,29 @@
 #include <cmath>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/search/kdtree.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
+// LOGICA DA FUSÃO ENTRE CAMERA E LIDAR BASEADO INTEIRAMENTE NO ARTIGO ABAIXO:
+// TechLabs Aachen - Visual & LiDAR-based Tracking of Traffic Cones (2021)
+// https://techlabs-aachen.medium.com/visual-lidar-based-tracking-of-traffic-cones-20e83f6067f8
 
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
-
-struct Cluster {
-    std::vector<pcl::PointXYZ> points;
-};
+#define MAX_DISTANCE 0.02
 
 using namespace message_filters;
+
+// cria um apelido menor pro tipo (MySyncPolicy)
 typedef sync_policies::ApproximateTime<
     sensor_msgs::msg::PointCloud2,
-    yolov8_msgs::msg::Yolov8Inference> MySyncPolicy;
+    yolov8_msgs::msg::Yolov8Inference> MySyncPolicy; 
+
 
 class PointCloudHandler : public rclcpp::Node {
 public:
-  PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
+
+  // Construtor 
+  PointCloudHandler() : rclcpp::Node("lidar_fusion")
   , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
   , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
 
@@ -52,34 +59,40 @@ public:
                 this,
                 std::placeholders::_1,
                 std::placeholders::_2));
+    
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
 
-    std::string path_intrinsic = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    // Carrega os yaml's
+    std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_intrinsic.yaml";
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_extrinsic.yaml";
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
+    // Carrega cada matriz especificada do yaml
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
     auto trans_data = config_extrinsic["translation_matrix"]["data"].as<std::vector<float>>();
     auto rrect_data = config_intrinsic["rectification_matrix"]["data"].as<std::vector<float>>();
     auto proj_data = config_intrinsic["projection_matrix"]["data"].as<std::vector<float>>();
 
+
+    // Carrega as matrizes em matrizes da biblioteca Eigen, permitindo manipulação 
     Eigen::Matrix4f R_rect;
     for (int i = 0; i < 16; ++i)
-      R_rect(i / 4, i % 4) = rrect_data[i];
+      R_rect(i / 4, i % 4) = rrect_data[i]; // Matriz de rectificação
 
     Eigen::Matrix<float, 3, 4> P;
     for (int i = 0; i < 12; ++i)
-      P(i / 4, i % 4) = proj_data[i];
+      P(i / 4, i % 4) = proj_data[i]; // Matriz de projeção
 
     Eigen::Matrix3f R;
     for (int i = 0; i < 9; ++i)
-      R(i / 3, i % 3) = rot_data[i];
+      R(i / 3, i % 3) = rot_data[i]; // Matriz de rotação
 
     for (int i = 0; i < 3; ++i)
-      t(i) = trans_data[i];
+      t(i) = trans_data[i]; // Matriz de translação
 
+    // Cria a matriz RT (Concatenação de R e T)
     RT = Eigen::Matrix4f::Identity();
     RT.block<3,3>(0,0) = R;
     RT.block<3,1>(0,3) = t;
@@ -94,45 +107,52 @@ public:
 
     // Aplica essa rotação adicional
     RT = lidar_to_cam_fix * RT;
-    camera_matrix = P * R_rect * RT;
 
-    RCLCPP_INFO(this->get_logger(), "Transform loaded from YAML.");
-    std::cout<<RT<<std::endl;
+    // Matriz final
+    camera_matrix = P * R_rect * RT;
   }
 
 private:
+    // Callback principal. Recebe uma pointcloud crua do LiDAR e uma inferencia
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
-      
+
+      // Transforma a mensagem ROS2 da pointcloud em uma pointcloud da biblioteca pcl
+      // permitindo quaisquer manipulações na pointcloud                  
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
-      //declara uma pointcloud vazia que vai ser a que será publicada
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
-      cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
-      cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
-      
+      //declara uma pointcloud (pcl) vazia que vai ser a que será publicada
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
+      // mensagem de track que sera publicada
       fs_msgs::msg::TrackStamped track_final;
+
+      // pointcloud pcl auxiliar (explicação esta mais abaixo)
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
     
-      cloud_final->points.clear();
+      //cloud_final->points.clear();
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PointXYZ highest_point;
         bool first = true;
-        fs_msgs::msg::Cone cone;
 
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
-            Eigen::Vector3f Y = camera_matrix * X;
-            if (Y(2) >= 0) continue;
+            Eigen::Vector3f Y = camera_matrix * X; // Pointcloud no espaço 2D
+            if (Y(2) >= 0) continue; // TEM QUE MANTER ISSO
+            
+            // Normaliza os pontos
             float u = Y(0) / Y(2);
             float v = Y(1) / Y(2);
-
+            
+            // Se esta dentro dos limites da BoundingBox o ponto entra na pointcloud filtrada
+            // Se esse ponto for o primeiro a ser analisado no loop ou a altura dele (eixo z)
+            // for maior que a variavel highest_point (que guarda o ponto mais alto registrado ate o momento do loop)
+            // entao esse ponto sera o novo highest_point 
+            // O objetivo disso é guardar o maior ponto z dos pontos projetados no cone que esta sendo processado
             if (u >= inf.top && u <= inf.bottom && 
                 v >= inf.left && v <= inf.right) {
 
@@ -144,15 +164,31 @@ private:
             }
         }
 
+        // Para cada ponto da pointcloud filtrada resultante, se o ponto estiver
+        // no maximo MAX_DISTANCE centrimetros abaixo do do maior ponto (highest_point)
+        // entao ele é considerado e adicionado na pointcloud final
+        // Isso é uma maneira de filtrar pontos que estão sendo de fato projetados no cone
+        // assim evita pontos que estao nos limites da boundingbox mas estao 
+        // sendo projetados no chão e nao no cone
         for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - 0.02){
+          
+          if (point.z >= highest_point.z - MAX_DISTANCE) {
+
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
           }
         }
-        cone = clusterize(cloud_aux, inf.class_name);
+
+        // Cria um cone, que recebe o retorno da função que clusteriza a pointcloud auxiliar
+        // essa pointcloud auxiliar serve pra receber os pontos de um cone so. Ja a cloud_final
+        // recebe todos os pontos filtrados de todos os cones ate o momento
+        // por isso se usa a auxiliar que recebe os pontos de um cone so, no caso, o que esta
+        // sendo processado no momento, por isso tambem que é chamado a funcao clear() no final do loop da inference
+        fs_msgs::msg::Cone cone = clusterize(cloud_aux, inf.class_name);
+        
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
-          // Desloca o cone pra posição relativa da camera
+
+          // Desloca o cone pra posição relativa da camera (PRECISA SER TESTADO ESSA FEATURE)
           cone.location.x += t(0);
           cone.location.y += t(1);
           cone.location.z += t(3);
@@ -176,6 +212,13 @@ private:
     
   }
 
+  // Essa função recebe uma pointcloud filtrada de um cone
+  // e a cor detectada do cone pela YOLO.
+  // É feita a mediana de todos os eixos entre os pontos da cloud_aux
+  // Dessa forma é criado um cone de output com a cor detectada e uma localização propria
+  // Essa função é uma das que talvez mais precise de manutenção futura pois é muito simples 
+  // e provavelmente não efetiva, outra coisa é a questão do eixo z (de altura) talvez não deva
+  // ser feito dessa forma e sim apenas os eixos 2D (x,y)
   fs_msgs::msg::Cone clusterize(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_aux,
     const std::string& cone_class)
@@ -211,6 +254,7 @@ private:
       return cone_out;
   }
 
+  // funcao chamada dentro de clusterize que de fato faz a mediana de cada eixo
   double mediana_coord(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, char coord) {
       std::vector<float> vals;
       vals.reserve(cloud->size());
