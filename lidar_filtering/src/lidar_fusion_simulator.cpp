@@ -27,6 +27,7 @@
 #include <pcl/search/kdtree.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
 
@@ -42,7 +43,7 @@ typedef sync_policies::ApproximateTime<
 class PointCloudHandler : public rclcpp::Node {
 public:
   PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
-  , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
+  , sub_pointcloud{this, "/fsds/lidar/Lidar2", rmw_qos_profile_sensor_data}
   , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
 
   {
@@ -114,7 +115,6 @@ private:
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
-
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
@@ -137,12 +137,12 @@ private:
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
             Eigen::Vector3f Y = camera_matrix * X;
-            if (Y(2) >= 0) continue;
+            if (Y(2) <= 0) continue;
             float u = Y(0) / Y(2);
             float v = Y(1) / Y(2);
 
-            if (u >= inf.top && u <= inf.bottom && 
-                v >= inf.left && v <= inf.right) {
+            if (u >= inf.left && u <= inf.right &&
+                v >= inf.top  && v <= inf.bottom) {
 
                 cloud_filt->points.push_back(pt);
                 if (first || pt.z > highest_point.z) {
