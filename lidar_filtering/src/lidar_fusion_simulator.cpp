@@ -25,6 +25,7 @@
 #include <cmath>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/search/kdtree.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
@@ -55,9 +56,9 @@ public:
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
 
-    std::string path_intrinsic = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/intrinsic_simulator.yaml";
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/extrinsic_simulator.yaml";
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
@@ -113,6 +114,7 @@ private:
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
+
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
