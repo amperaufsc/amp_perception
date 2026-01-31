@@ -178,7 +178,7 @@ class PerceptionProcess:
         disp_vis = (disp_map / np.max(disp_map) * 255).astype(np.uint8)
         disp_vis = cv2.medianBlur(disp_vis, 5)  
 
-        return disp_vis
+        return (disp_map, disp_vis)
     
     def yaml_reader(self, endereco_left, endereco_right):
         try:
