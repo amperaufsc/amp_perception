@@ -41,8 +41,8 @@ typedef sync_policies::ApproximateTime<
 class PointCloudHandler : public rclcpp::Node {
 public:
   PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
-  , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
-  , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
+  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
+  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
@@ -55,9 +55,9 @@ public:
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
 
-    std::string path_intrinsic = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    std::string path_intrinsic = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_extrinsic.yaml"; 
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
@@ -114,7 +114,7 @@ private:
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
 
-      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
+      //cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
