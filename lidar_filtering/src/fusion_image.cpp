@@ -105,7 +105,9 @@ private:
         Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f); // ponto em coordenadas homogêneas
         Eigen::Vector3f Y = camera_matrix * X;     // aplica P * R_rect * RT
 
-        if (Y(2) >= 0) continue;
+        // SE O LIDAR FOR VELODYNE DEVE SER '<='
+        // SE FOR OUSTER DEVE SER '=>'
+        if (Y(2) <= 0) continue;
         float u = Y(0) / Y(2);
         float v = Y(1) / Y(2);
       
