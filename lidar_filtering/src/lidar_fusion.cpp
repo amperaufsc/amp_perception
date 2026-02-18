@@ -157,7 +157,7 @@ private:
         }
 
         for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - 0.02){
+          if (point.z >= highest_point.z - 0.03f){
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
           }
