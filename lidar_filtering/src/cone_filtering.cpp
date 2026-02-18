@@ -48,8 +48,8 @@ public:
 
   // Construtor 
   PointCloudHandler() : rclcpp::Node("lidar_fusion")
-  , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
-  , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
+  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
+  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
