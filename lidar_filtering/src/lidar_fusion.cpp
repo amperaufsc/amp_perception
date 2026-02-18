@@ -41,8 +41,8 @@ typedef sync_policies::ApproximateTime<
 class PointCloudHandler : public rclcpp::Node {
 public:
   PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
-  , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
-  , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
+  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
+  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
@@ -55,9 +55,9 @@ public:
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
 
-    std::string path_intrinsic = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    std::string path_intrinsic = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/ampera/ws/src/as_amp/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_extrinsic.yaml"; 
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
@@ -85,11 +85,12 @@ public:
     RT.block<3,3>(0,0) = R;
     RT.block<3,1>(0,3) = t;
     
-    // Corrige a rotação padrão LiDAR → Camera optical frame
+    // SE O LIDAR FOR VELODYNE O 1 DA SEGUNDA LINHA DEVE SER NEGATIVO
+    // SE FOR OUSTER DEVE SER POSITIVO
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  1, 0,
+        0,  0,  -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 
@@ -135,7 +136,10 @@ private:
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
             Eigen::Vector3f Y = camera_matrix * X;
-            if (Y(2) >= 0) continue;
+            
+            // SE O LIDAR FOR VELODYNE DEVE SER '<=' 
+            // SE FOR OUSTER DEVE SER '=>'
+            if (Y(2) <= 0) continue;
             float u = Y(0) / Y(2);
             float v = Y(1) / Y(2);
 
@@ -151,7 +155,7 @@ private:
         }
 
         for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - 0.02){
+          if (point.z >= highest_point.z - 0.03f){
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
           }
