@@ -85,11 +85,12 @@ public:
     RT.block<3,3>(0,0) = R;
     RT.block<3,1>(0,3) = t;
     
-    // Corrige a rotação padrão LiDAR → Camera optical frame
+    // SE O LIDAR FOR VELODYNE O 1 DA SEGUNDA LINHA DEVE SER NEGATIVO
+    // SE FOR OUSTER DEVE SER POSITIVO
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  1, 0,
+        0,  0,  -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 
@@ -137,7 +138,10 @@ private:
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
             Eigen::Vector3f Y = camera_matrix * X;
-            if (Y(2) >= 0) continue;
+            
+            // SE O LIDAR FOR VELODYNE DEVE SER '<=' 
+            // SE FOR OUSTER DEVE SER '=>'
+            if (Y(2) <= 0) continue;
             float u = Y(0) / Y(2);
             float v = Y(1) / Y(2);
 
@@ -153,7 +157,7 @@ private:
         }
 
         for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - 0.02){
+          if (point.z >= highest_point.z - 0.03f){
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
           }
