@@ -127,12 +127,8 @@ private:
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
-      // mensagem de track que sera publicada
       fs_msgs::msg::TrackStamped track_final;
 
-      // pointcloud pcl auxiliar (explicação esta mais abaixo)
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
-    
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PointXYZ highest_point;
@@ -163,28 +159,12 @@ private:
                 }
             }
         }
+        cloud_final->points.push_back(highest_point);
 
-        // Para cada ponto da pointcloud filtrada resultante, se o ponto estiver
-        // no maximo MAX_DISTANCE centrimetros abaixo do do maior ponto (highest_point)
-        // entao ele é considerado e adicionado na pointcloud final
-        // Isso é uma maneira de filtrar pontos que estão sendo de fato projetados no cone
-        // assim evita pontos que estao nos limites da boundingbox mas estao 
-        // sendo projetados no chão e nao no cone
-        for (const auto& point : cloud_filt->points) {
-          
-          if (point.z >= highest_point.z - MAX_DISTANCE) {
-
-            cloud_final->points.push_back(point);
-            cloud_aux->points.push_back(point);
-          }
-        }
-
-        // Cria um cone, que recebe o retorno da função que clusteriza a pointcloud auxiliar
-        // essa pointcloud auxiliar serve pra receber os pontos de um cone so. Ja a cloud_final
-        // recebe todos os pontos filtrados de todos os cones ate o momento
-        // por isso se usa a auxiliar que recebe os pontos de um cone so, no caso, o que esta
-        // sendo processado no momento, por isso tambem que é chamado a funcao clear() no final do loop da inference
-        fs_msgs::msg::Cone cone = clusterize(cloud_aux, inf.class_name);
+        // Cria um cone, que recebe o retorno da função que clusteriza o maior ponto da boundingbox
+        // detectada. Ou seja, o maior ponto detectadp sera usado de referencia para criar a track
+        // do cone, pelo fato que o maior ponto consequentemente estará mais proximo do centro, sendo mais preciso.
+        fs_msgs::msg::Cone cone = clusterize(highest_point, inf.class_name);
         
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
 
@@ -200,7 +180,6 @@ private:
 
           track_final.track.push_back(cone);
         }
-        cloud_aux->points.clear();
       }
 
     cloud_final->width  = static_cast<uint32_t>(cloud_final->points.size());
@@ -217,37 +196,16 @@ private:
     
   }
 
-  // Essa função recebe uma pointcloud filtrada de um cone
-  // e a cor detectada do cone pela YOLO.
-  // É feita a mediana de todos os eixos entre os pontos da cloud_aux
+  // Essa função recebe um ponto da pointcloud, o mais alto ponto da boundingbox 
+  // que esta sendo tratada no momento, e a cor detectada do cone pela YOLO.
   // Dessa forma é criado um cone de output com a cor detectada e uma localização propria
-  // Essa função é uma das que talvez mais precise de manutenção futura pois é muito simples 
-  // e provavelmente não efetiva, outra coisa é a questão do eixo z (de altura) talvez não deva
-  // ser feito dessa forma e sim apenas os eixos 2D (x,y)
-  fs_msgs::msg::Cone clusterize(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_aux,
-    const std::string& cone_class)
+  fs_msgs::msg::Cone clusterize(const pcl::PointXYZ highest_point, const std::string& cone_class)
   {
       fs_msgs::msg::Cone cone_out;
 
-      // Se não tem ponto, retorna cone UNKNOWN em (0,0,0)
-      if (cloud_aux->points.size() <= 0) {
-          cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
-          return cone_out;
-      }
-
-      float mx = mediana_coord(cloud_aux, 'x');
-      float my = mediana_coord(cloud_aux, 'y');
-      float mz = mediana_coord(cloud_aux, 'z');
-      // Preenche cone_out
-      cone_out.location.x = mx;
-      cone_out.location.y = my;
-      cone_out.location.z = mz;
-
-      if (mx == 0.0 || my == 0.0 || mz == 0.0){
-        cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
-        return cone_out;
-      }
+      cone_out.location.x = highest_point.x;
+      cone_out.location.y = highest_point.y;
+      cone_out.location.z = highest_point.z;
 
       if (cone_class == "yellow_cone")
           cone_out.color = fs_msgs::msg::Cone::YELLOW;
@@ -257,33 +215,6 @@ private:
           cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
 
       return cone_out;
-  }
-
-  // funcao chamada dentro de clusterize que de fato faz a mediana de cada eixo
-  double mediana_coord(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, char coord) {
-      std::vector<float> vals;
-      vals.reserve(cloud->size());
-
-      for (const auto& p : cloud->points) {
-          switch (coord) {
-              case 'x': vals.push_back(p.x); break;
-              case 'y': vals.push_back(p.y); break;
-              case 'z': vals.push_back(p.z); break;
-              default: throw std::runtime_error("coord inválido (use 'x', 'y' ou 'z')");
-          }
-      }
-
-      if (vals.empty())
-          return 0.0;
-
-      std::sort(vals.begin(), vals.end());
-
-      int n = vals.size();
-      if (n % 2 == 1) {
-          return vals[n / 2];
-      } else {
-          return (vals[n/2 - 1] + vals[n/2]) / 2.0;
-      }
   }
 
   Eigen::Matrix4f RT;
