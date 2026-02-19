@@ -16,8 +16,6 @@ find_package(std_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(message_filters REQUIRED)
-find_package(sensor_msgs)
-find_package(Open_CV)
 find_package(yolov8_msgs REQUIRED)
 find_package(fs_msgs REQUIRED)
 

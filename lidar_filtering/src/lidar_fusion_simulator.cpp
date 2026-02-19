@@ -107,7 +107,6 @@ private:
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
       
-      int iterador = 0;
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
