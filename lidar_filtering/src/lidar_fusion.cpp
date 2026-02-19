@@ -48,8 +48,8 @@ public:
 
   // Construtor 
   PointCloudHandler() : rclcpp::Node("lidar_fusion")
-  , sub_pointcloud{this, "/ouster/points", rmw_qos_profile_sensor_data}
-  , sub_inference{this, "/yolov8/inferenceresult", rmw_qos_profile_sensor_data} 
+  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
+  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
@@ -101,7 +101,7 @@ public:
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  1, 0,
+        0,  0,  -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 
@@ -140,7 +140,7 @@ private:
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
             Eigen::Vector3f Y = camera_matrix * X; // Pointcloud no espaço 2D
-            if (Y(2) >= 0) continue; // TEM QUE MANTER ISSO
+            if (Y(2) <= 0) continue; // TEM QUE MANTER ISSO
             
             // Normaliza os pontos
             float u = Y(0) / Y(2);
@@ -186,10 +186,15 @@ private:
         
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
 
-          // Desloca o cone pra posição relativa da camera (PRECISA SER TESTADO ESSA FEATURE)
-          cone.location.x += t(0);
-          cone.location.y += t(1);
-          cone.location.z += t(3);
+
+          //MUDA A TRACK PRO FRAME DA CAMERA EM VEZ DO LIDAR  
+          Eigen::Vector4f p_l(cone.location.x, cone.location.y, cone.location.z, 1.0f);
+          Eigen::Vector4f p_c = RT * p_l;   
+
+          cone.location.x = p_c(0);
+          cone.location.y = p_c(1);
+          cone.location.z = p_c(2);
+
 
           track_final.track.push_back(cone);
         }
