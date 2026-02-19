@@ -33,9 +33,9 @@
 
 ---
 
-# ROS Interfaces
+## ROS Interfaces
 
-## Topics (Perception)
+### Topics (Perception)
 
 | Module           | Direction | Topic                     | Message Type                 | Notes |
 |------------------|-----------|---------------------------|-------------------------------|-------|
@@ -49,7 +49,7 @@
 
 ---
 
-# Dependencies
+## Dependencies
 
 Core dependencies (minimum):
 
@@ -61,13 +61,13 @@ Core dependencies (minimum):
 
 ---
 
-## For compiling, use: 
+### For compiling, use: 
 
 ```bash
     colcon build --packages-select perception
    ```
 
-## For launch, use: 
+### For launch, use: 
 
 ```bash
     ros2 run perception depthai_camera_publisher.py
@@ -76,3 +76,90 @@ Core dependencies (minimum):
 ```bash
     ros2 launch perception amp_depthai.launch.py
    ```
+## Setup camera Luxonis OAK-D-LR
+
+### Dependencies
+  To install the necessary dependencies, simply run `OAK_D_LR_Setup`. Do not forget to check the name of your system's ROS 2 workspace; by default, it is set to ws. If that is not your case, change it.
+
+  *OAK_D_LR_Setup:*
+```bash
+    cd ws/src/
+    git clone --branch humble https://github.com/luxonis/depthai-ros.git
+    cd ..
+    sudo apt update
+    rosdep update
+    rosdep install --from-paths src --ignore-src -r -y
+    source /opt/ros/humble/setup.bash
+    MAKEFLAGS="-j1 -l1" colcon build
+    source install/setup.bash
+```
+  
+  After installing `OAK_D_LR_Setup`, simply run the launcher to start the camera and publish the topics
+
+  *Camera launcher:*
+```bash
+    source install/setup.bash	
+    ros2 launch depthai_ros_driver camera.launch.py 
+```
+#### Possible lauch error
+If you get the error 'Insufficient permissions to communicate with X_LINK_BOOTLOADER device with name "3.3". Make sure udev rules are set' when running the launcher, it means the USB port is blocked. If this happens, cancel the launch, run the codes below, and then disconnect and reconnect the USB cable.
+
+```bash
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
+    sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+#### Source: https://docs.luxonis.com/software/ros/depthai-ros/build/
+
+### Parameter
+  Parameters are essential for operation, defining, for example, which topics will be published or the specific configurations under which the camera will operate. To change them, simply navigate to the `/ws/src/depthai-ros/depthai_ros_driver/config` package and modify the `camera.yaml` file.
+*These are the base parameters used by Ampera.*
+```yaml
+    /**:
+      ros__parameters:
+        camera:
+          i_enable_imu: true
+          i_enable_ir: true
+          i_nn_type: none
+          i_pipeline_type: RGBD
+        pipeline_gen:
+          i_enable_imu: true
+        imu:
+          i_message_type: IMU
+          i_enable_rotation: true
+          i_acc_freq: 400
+          i_gyro_freq: 400
+          i_rot_freq: 400
+        rgb:
+          i_disable_node: true
+          i_simulate_from_topic: true
+          i_publish_topic: false
+        left:
+          i_publish_topic: true
+          i_fps: 60.0
+          i_resolution: 1200P
+        right:
+          i_publish_topic: true
+          i_fps: 60.0
+          i_resolution: 1200P
+        stereo:
+          i_depth_preset: HIGH_DENSITY
+          i_disparity_width: DISPARITY_96
+          i_align_depth: true
+          i_board_socket_id: 1
+          i_extended_disp: true
+          i_subpixel: true
+          i_subpixel_fractional_bits: 5
+          i_lr_check: true
+          i_lrc_threshold: 5
+          i_max_q_size: 4
+          i_enable_brightness_filter: false
+          i_enable_decimation_filter: false
+          i_enable_spatial_filter: false
+          i_enable_speckle_filter: false
+          i_enable_temporal_filter: false
+          i_stereo_conf_threshold: 240
+          i_publish_topic: true
+```
+
+#### Source and Parameters: https://docs.luxonis.com/software/ros/depthai-ros/driver/

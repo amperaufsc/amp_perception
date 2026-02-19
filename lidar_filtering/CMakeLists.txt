@@ -21,7 +21,6 @@ find_package(Open_CV)
 find_package(yolov8_msgs REQUIRED)
 find_package(fs_msgs REQUIRED)
 
-# Inclui diretórios (OpenCV, ROS2, PCL, etc)
 include_directories(
   include
   ${OpenCV_INCLUDE_DIRS}
@@ -61,6 +60,7 @@ ament_target_dependencies(fusion_image
   OpenCV
   message_filters
   yolov8_msgs
+  fs_msgs
 )
 
 target_link_libraries(lidar_fusion
@@ -79,7 +79,6 @@ target_link_libraries(fusion_image
   yaml-cpp
 )
 
-
 install(
   DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}/
@@ -89,6 +88,7 @@ install(TARGETS
 lidar_fusion
   DESTINATION lib/${PROJECT_NAME}
 )
+
 install(TARGETS
 cone_filtering
   DESTINATION lib/${PROJECT_NAME}

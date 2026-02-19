@@ -27,6 +27,7 @@ install(
         ros2/depthai_position_estimator.py
         DESTINATION lib/${PROJECT_NAME}
 )
+
 install(
         PROGRAMS
         ros2/test_node.py
