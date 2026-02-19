@@ -36,8 +36,8 @@ class PositionEstimator(Node):
 
         self.declare_parameter('set_disparity', True)
         
-        self.declare_parameter('left_camera_info','src/as_amp/perception/config/OAKDLR_left.yaml')
-        self.declare_parameter('right_camera_info','src/as_amp/perception/config/OAKDLR_right.yaml')
+        self.declare_parameter('left_camera_info','src/amp_perception/perception/config/OAKDLR_left.yaml')
+        self.declare_parameter('right_camera_info','src/amp_perception/perception/config/OAKDLR_right.yaml')
 
         self.left_path = self.get_parameter('left_camera_info').value
         self.right_path = self.get_parameter('right_camera_info').value
