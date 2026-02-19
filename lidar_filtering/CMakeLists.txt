@@ -31,6 +31,8 @@ include_directories(
 add_executable(lidar_fusion src/lidar_fusion.cpp)
 add_executable(cone_filtering src/cone_filtering.cpp)
 add_executable(fusion_image src/fusion_image.cpp)
+add_executable(lidar_fusion_simulator src/lidar_fusion_simulator.cpp)
+add_executable(fusion_image_simulator src/fusion_image_simulator.cpp)
 # Link com bibliotecas do ROS 2 e OpenCV
 ament_target_dependencies(lidar_fusion
   rclcpp
@@ -62,7 +64,25 @@ ament_target_dependencies(fusion_image
   yolov8_msgs
   fs_msgs
 )
-
+ament_target_dependencies(lidar_fusion_simulator
+  rclcpp
+  sensor_msgs
+  pcl_conversions
+  cv_bridge
+  OpenCV
+  message_filters
+  yolov8_msgs
+  fs_msgs
+)
+ament_target_dependencies(fusion_image_simulator
+  rclcpp
+  sensor_msgs
+  pcl_conversions
+  cv_bridge
+  OpenCV
+  message_filters
+  yolov8_msgs
+)
 target_link_libraries(lidar_fusion
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
@@ -74,6 +94,16 @@ target_link_libraries(cone_filtering
   yaml-cpp
 )
 target_link_libraries(fusion_image
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES}
+  yaml-cpp
+)
+target_link_libraries(lidar_fusion_simulator
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES}
+  yaml-cpp
+)
+target_link_libraries(fusion_image_simulator
   ${OpenCV_LIBRARIES}
   ${PCL_LIBRARIES}
   yaml-cpp
@@ -97,5 +127,15 @@ install(TARGETS
 fusion_image
   DESTINATION lib/${PROJECT_NAME}
 )
+
+install(TARGETS
+lidar_fusion_simulator
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS
+fusion_image_simulator
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 ament_package()
