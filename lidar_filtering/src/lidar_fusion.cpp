@@ -116,9 +116,7 @@ private:
     // Callback principal. Recebe uma pointcloud crua do LiDAR e uma inferencia
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
-
-      // Transforma a mensagem ROS2 da pointcloud em uma pointcloud da biblioteca pcl
-      // permitindo quaisquer manipulações na pointcloud                  
+                 
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
@@ -128,6 +126,7 @@ private:
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
       fs_msgs::msg::TrackStamped track_final;
+      track_final.header.stamp = pointcloud_msg->header.stamp;
 
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);

@@ -133,6 +133,7 @@ private:
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
       fs_msgs::msg::TrackStamped track_final;
+      track_final.header.stamp = pointcloud_msg->header.stamp;
 
       // --- IMAGEM: base para pintar ---
       cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");

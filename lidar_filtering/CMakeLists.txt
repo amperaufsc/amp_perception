@@ -135,5 +135,9 @@ fusion_image_simulator
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/lidar_track_plot.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()
