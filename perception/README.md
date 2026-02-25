@@ -116,50 +116,50 @@ If you get the error 'Insufficient permissions to communicate with X_LINK_BOOTLO
 *These are the base parameters used by Ampera.*
 ```yaml
     /**:
-      ros__parameters:
-        camera:
-          i_enable_imu: true
-          i_enable_ir: true
-          i_nn_type: none
-          i_pipeline_type: RGBD
-        pipeline_gen:
-          i_enable_imu: true
-        imu:
-          i_message_type: IMU
-          i_enable_rotation: true
-          i_acc_freq: 400
-          i_gyro_freq: 400
-          i_rot_freq: 400
-        rgb:
-          i_disable_node: true
-          i_simulate_from_topic: true
-          i_publish_topic: false
-        left:
-          i_publish_topic: true
-          i_fps: 60.0
-          i_resolution: 1200P
-        right:
-          i_publish_topic: true
-          i_fps: 60.0
-          i_resolution: 1200P
-        stereo:
-          i_depth_preset: HIGH_DENSITY
-          i_disparity_width: DISPARITY_96
-          i_align_depth: true
-          i_board_socket_id: 1
-          i_extended_disp: true
-          i_subpixel: true
-          i_subpixel_fractional_bits: 5
-          i_lr_check: true
-          i_lrc_threshold: 5
-          i_max_q_size: 4
-          i_enable_brightness_filter: false
-          i_enable_decimation_filter: false
-          i_enable_spatial_filter: false
-          i_enable_speckle_filter: false
-          i_enable_temporal_filter: false
-          i_stereo_conf_threshold: 240
-          i_publish_topic: true
+    ros__parameters:
+      camera:
+        i_enable_imu: true
+        i_enable_ir: true
+        i_nn_type: none
+        i_pipeline_type: RGBD
+      pipeline_gen:
+        i_enable_imu: true
+      imu:
+        i_message_type: IMU
+        i_enable_rotation: true
+        i_acc_freq: 400
+        i_gyro_freq: 400
+        i_rot_freq: 400
+      rgb:
+        i_disable_node: true
+        i_simulate_from_topic: true
+        i_publish_topic: false
+      left:
+        i_publish_topic: true
+        i_fps: 60.0
+        i_resolution: 1200P
+      right:
+        i_publish_topic: true
+        i_fps: 60.0
+        i_resolution: 1200P
+      stereo:
+        i_depth_preset: HIGH_DENSITY
+        i_disparity_width: DISPARITY_96
+        i_align_depth: true
+        i_board_socket_id: 1
+        i_extended_disp: true
+        i_subpixel: true
+        i_subpixel_fractional_bits: 5
+        i_lr_check: true
+        i_lrc_threshold: 5
+        i_max_q_size: 4
+        i_enable_brightness_filter: false
+        i_enable_decimation_filter: false
+        i_enable_spatial_filter: false
+        i_enable_speckle_filter: false
+        i_enable_temporal_filter: false
+        i_stereo_conf_threshold: 240
+        i_publish_topic: true
 ```
 
 #### Source and Parameters: https://docs.luxonis.com/software/ros/depthai-ros/driver/
