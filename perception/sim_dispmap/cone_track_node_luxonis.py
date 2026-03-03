@@ -25,30 +25,31 @@ class Cone_Track_Process(Node):
 
         self.calc = PerceptionProcess(baseline)
                      
-        self.image_left_sub = Subscriber(self, Image, "/oak/left/image_rect")
-        self.image_right_sub = Subscriber(self, Image, "/oak/right/image_rect")
+        self.image_left_sub = Subscriber(self, Image, "/oak/left/image_raw")
+        self.image_right_sub = Subscriber(self, Image, "/oak/right/image_raw")
         self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "/inferenceresult")
-        self.base_disp_map = Subscriber(self, Image, "/disparity_map/patinho")
+        self.base_disp_map = Subscriber(self, Image, "/oak/stereo/image_raw")
 
 
-        self.Track_Stamped_Base_Pub = self.create_publisher(TrackStampedWithCovariance, "/track_pub/patinho",10)
+        self.Track_Stamped_Base_Pub = self.create_publisher(TrackStampedWithCovariance, "/track_pub/luxonis",10)
 
         max_delay = 0.5
         self.time_sync = ApproximateTimeSynchronizer([self.image_left_sub, self.image_right_sub, self.yolo_inf_sub, self.base_disp_map],10,max_delay)
         self.time_sync.registerCallback(self.sync_callback)
-        
+            
         self.get_logger().info("init finalizado")
         
 
     def sync_callback(self, imgL_raw_ros_msg, imgR_raw_ros_msg, yoloinference, disp_map):
         if disp_map.encoding == "16UC1" or None: # verifica se a mensagem stereo é a que vem da camera
-            self.get_logger().warn("Luxonis map")
+            self.get_logger().warn("Luxonis depth map")
             disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
             track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
 
         else:
-            self.get_logger().warn("Patinho map")
+            self.get_logger().warn("Luxonis disp map")
             disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
+            disp_map = self.calc.DisparityProcess(imgL_raw_ros_msg, imgR_raw_ros_msg)[0]
             track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
             
         for cone in track_base_map.track:

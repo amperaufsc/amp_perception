@@ -9,11 +9,13 @@ import rclpy
 from rclpy.node import Node
 import rclpy.time
 from sensor_msgs.msg import Image, CameraInfo
+from stereo_msgs.msg import DisparityImage
 from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from fs_msgs.msg import TrackStampedWithCovariance, TrackStamped
 from yolov8_msgs.msg import Yolov8Inference
+from perception_calc import PerceptionProcess
 import yaml
 import time
 import threading
@@ -26,13 +28,19 @@ class NoDisparidadeShowWindow(Node):
     def __init__(self):
         super().__init__('disp_map_show')
         self.get_logger().info("DisparityImage foi iniciallizado")
+        baseline = 0.15
+        self.calc = PerceptionProcess(baseline)
                 
-        self.disp_base_map = Subscriber(self, Image, "/disparity_map/base")
-        self.disp_filtered_map = Subscriber(self, Image, "/disparity_map/filtered")
-        self.yolo_sub = Subscriber(self, Yolov8Inference, "/inferenceresult")
+        #self.disp_base_map = Subscriber(self, Image, "/disparity_map/patinho")
+        #self.disp_filtered_map = Subscriber(self, Image, "/oak/stereo/image_raw")
+        #self.yolo_sub = Subscriber(self, Yolov8Inference, "/inferenceresult")
+        self.img_L = Subscriber(self, Image, "/oak/left/image_raw")
+        self.img_R = Subscriber(self, Image, "/oak/right/image_raw")
+
+        self.disp_patinho_map = self.create_publisher(Image, "/disparity_map/patinho", 10)
         
         max_delay = 0.05
-        self.time_sync = ApproximateTimeSynchronizer([self.disp_base_map,self.disp_filtered_map, self.yolo_sub],10,max_delay)
+        self.time_sync = ApproximateTimeSynchronizer([self.img_L, self.img_R],10,max_delay)
         self.time_sync.registerCallback(self.sync_callback)
         
         #Criação de uma thread dedicada a atualizar GUI, para que a atualização aconteça paralelamente ao processamento das imagens e, assim, não uma função "independe" da outra
@@ -45,60 +53,30 @@ class NoDisparidadeShowWindow(Node):
         self.get_logger().info("init finalizado")
         
 
-    def sync_callback(self, base_map, filtered_map, yolo):
-        
-        base_map = base_map
-        filtered_map = filtered_map
-        #base_map = self.draw_yolo_boxes(base_map, yolo)
-        #filtered_map = self.draw_yolo_boxes(filtered_map,yolo)
-        
+    def sync_callback(self, img_L_raw, img_R_raw):
+
+        img_L_rect, img_R_rect, kL, pL = self.calc.approximate_stereo_rectify(img_L_raw, img_R_raw)
+        base_map = self.calc.DisparityProcess(img_L_rect, img_R_rect)[1]
+
+        img_L_rect = bridge.imgmsg_to_cv2(img_L_rect)
+        img_R_rect = bridge.imgmsg_to_cv2(img_R_rect)
+
         with self.lock:
-            #self.latest_disparity_map =  disp_yolo.copy()   
-            self.latest_disparity_map = base_map.copy()  
-            self.latest_filtered_map = filtered_map.copy()
-        
-    def  DisparityProcess(self, imgL, imgR):
-        
-        self.get_logger().info("Imagem está sendo processada")
+            self.latest_disparity_map = base_map.copy()
 
-        imgL = cv2.cvtColor(imgL,cv2.COLOR_BGR2GRAY)
-        imgR = cv2.cvtColor(imgR,cv2.COLOR_BGR2GRAY)
-        
-        stereo = cv2.StereoSGBM_create(
-            minDisparity=0,
-            numDisparities=16*11,
-            blockSize=7,
-            P1=8*3*7**2,
-            P2=32*3*7**2,
-            disp12MaxDiff=12,
-            uniquenessRatio=3,
-            speckleWindowSize=100,
-            speckleRange=64,
-            preFilterCap=63,
-            mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
-        )
-        disp_map = stereo.compute(imgL, imgR).astype(np.float32)
+        base_map = bridge.cv2_to_imgmsg(base_map)
+        base_map.header = img_L_raw.header
+        self.disp_patinho_map.publish(base_map)
 
-        disp_map = cv2.normalize(disp_map,None, 0, 255, cv2.NORM_MINMAX)
-        disp_map = np.uint8(disp_map)
-        disp_map[disp_map < 0] = 0
-        disp_map[disp_map > 64] = 64
-        disp_vis = (disp_map / np.max(disp_map) * 255).astype(np.uint8)
-        disp_vis = cv2.medianBlur(disp_vis, 5)  
-        
-        return (disp_vis,disp_map)
-    
     def display_loop(self):
-        cv2.namedWindow("Mapa de Disparidade V0")
+        cv2.namedWindow("Mapa de Disparidade V0", cv2.WINDOW_NORMAL)
 
         while rclpy.ok():
             with self.lock:
                 display_image = self.latest_disparity_map
-                display_image_2 = self.latest_filtered_map
             if display_image is not None:
             
-                cv2.imshow("base_map", display_image)
-                cv2.imshow("filtered_map", display_image_2)
+                cv2.imshow("imgL", display_image)
                 
             key = cv2.waitKey(1) & 0xFF
 

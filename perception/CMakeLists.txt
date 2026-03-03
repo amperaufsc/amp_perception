@@ -18,6 +18,16 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
+        sim_dispmap/conecomparisonnode.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
+        sim_dispmap/disparity_map_pub.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
         sim_dispmap/disp_map_show.py
         DESTINATION lib/${PROJECT_NAME}
 )
@@ -32,7 +42,11 @@ install(
         sim_dispmap/track_validation.py
         DESTINATION lib/${PROJECT_NAME}
 )
-
+install(
+        PROGRAMS
+        sim_dispmap/cone_track_node_luxonis.py
+        DESTINATION lib/${PROJECT_NAME}
+)
 install(
         PROGRAMS
         sim_dispmap/cone_track_node.py
