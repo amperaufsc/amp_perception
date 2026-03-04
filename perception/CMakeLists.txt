@@ -36,12 +36,6 @@ install(
         sim_dispmap/perception_calc.py
         DESTINATION lib/${PROJECT_NAME}
 )
-
-install(
-        PROGRAMS
-        sim_dispmap/track_validation.py
-        DESTINATION lib/${PROJECT_NAME}
-)
 install(
         PROGRAMS
         sim_dispmap/cone_track_node_luxonis.py
