@@ -25,6 +25,7 @@
 #include <cmath>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/search/kdtree.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
@@ -194,10 +195,14 @@ private:
       float mx = mediana_coord(cloud_aux, 'x');
       float my = mediana_coord(cloud_aux, 'y');
       float mz = mediana_coord(cloud_aux, 'z');
-      // Preenche cone_out
-      cone_out.location.x = mx;
-      cone_out.location.y = my;
-      cone_out.location.z = mz;
+
+      // Transforma o ponto médio para o frame da câmera
+      Eigen::Vector4f p_lidar(mx, my, mz, 1.0f);
+      Eigen::Vector4f p_cam = RT * p_lidar;
+
+      cone_out.location.x = p_cam(2);
+      cone_out.location.y = -p_cam(0);
+      cone_out.location.z = -p_cam(1);
 
       if (mx == 0.0 || my == 0.0 || mz == 0.0){
         cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
@@ -258,3 +263,7 @@ int main(int argc, char** argv) {
   rclcpp::shutdown();
   return 0;
 }
+
+// track x = track z
+// track y = - lidar x
+// track z = - track y
