@@ -55,9 +55,9 @@ public:
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
     pub_image = this->create_publisher<sensor_msgs::msg::Image>("image_lidar", 10);
 
-    std::string path_intrinsic = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+ std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_intrinsic.yaml";
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_extrinsic.yaml";
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
@@ -110,7 +110,6 @@ private:
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
-      //declara uma pointcloud vazia que vai ser a que será publicada
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
       cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
@@ -121,12 +120,11 @@ private:
       cloud_final->header   = cloud_in->header;   // mantém frame_id, stamp
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
-      //std::vector<uint8_t> color_bin;                  
       fs_msgs::msg::TrackStamped track_final;
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
     
-      //RCLCPP_INFO(this->get_logger(), "Imagem: %d x %d", image_msg->width, image_msg->height);
       cloud_final->points.clear();
+
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PointXYZ highest_point;
@@ -179,9 +177,6 @@ private:
     
     auto image_msg_painted = cv_ptr->toImageMsg();
     pub_image->publish(*image_msg_painted);
-    // CONVERSAO OPENCV PRA ROS2 IMAGE
-    // auto image_msg_painted = cv_ptr->toImageMsg();
-    // pub_image->publish(*image_msg_painted);
   }
 
   fs_msgs::msg::Cone clusterize(
@@ -263,16 +258,3 @@ int main(int argc, char** argv) {
   rclcpp::shutdown();
   return 0;
 }
-
-// if (u >= inf.top + (inf.bottom-inf.top)/3 && u <= inf.bottom - (inf.bottom-inf.top)/3  && 
-//           v >= inf.left + (inf.right - inf.left)/2 && v <= inf.right) 
-//136
-
-// cone.position.x = highest_point.x;
-//     cone.position.y = highest_point.y;
-//     cone.position.z = highest_point.z;
-//     cone.color = (inf.class_name == "yellow_cone")
-//                    ? fs_msgs::msg::Cone::YELLOW
-//                    : fs_msgs::msg::Cone::BLUE;
-
-//     track.track.push_back(cone);
