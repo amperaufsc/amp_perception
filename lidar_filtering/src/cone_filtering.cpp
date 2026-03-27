@@ -82,20 +82,20 @@ public:
     for (int i = 0; i < 3; ++i)
       t(i) = trans_data[i];
 
-    RT = Eigen::Matrix4f::Identity();
-    RT.block<3,3>(0,0) = R;
-    RT.block<3,1>(0,3) = t;
-    
-    // Corrige a rotação padrão LiDAR → Camera optical frame
+    // No construtor, ANTES de aplicar o fix:
+    RT_extrinsic = Eigen::Matrix4f::Identity();
+    RT_extrinsic.block<3,3>(0,0) = R;
+    RT_extrinsic.block<3,1>(0,3) = t;
+
+    // Aplica o fix só pra projeção:
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  -1, 0,
+        0,  0, -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 
-    // Aplica essa rotação adicional
-    RT = lidar_to_cam_fix * RT;
+    RT = lidar_to_cam_fix * RT_extrinsic;  // pra projeção 2D
     camera_matrix = P * R_rect * RT;
 
     RCLCPP_INFO(this->get_logger(), "Transform loaded from YAML.");
@@ -152,9 +152,11 @@ private:
         }
 
         for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - MAX_DISTANCE){
+          if (point.z >= highest_point.z - 0.02 ){
+            std::cout<<point.z<<std::endl;
             cloud_final->points.push_back(point);
             cloud_aux->points.push_back(point);
+            highest_point = point;
           }
         }
         cone = clusterize(cloud_aux, inf.class_name);
@@ -202,7 +204,7 @@ private:
 
       cone_out.location.x = p_cam(2);
       cone_out.location.y = -p_cam(0);
-      cone_out.location.z = -p_cam(1);
+      cone_out.location.z = 0.0f; // -p_cam(1)
 
       if (mx == 0.0 || my == 0.0 || mz == 0.0){
         cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
@@ -245,6 +247,7 @@ private:
       }
   }
 
+  Eigen::Matrix4f RT_extrinsic;
   Eigen::Matrix4f RT;
   Eigen::Matrix<float, 3, 4> camera_matrix; 
   message_filters::Subscriber<sensor_msgs::msg::PointCloud2> sub_pointcloud;

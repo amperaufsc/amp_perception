@@ -13,7 +13,7 @@ repositories:
   depthai-ros:
     type: git
     url: https://github.com/amperaufsc/depthai-ros.git
-    version: humble
+    version: v3_humble
 
   ouster-ros:
     type: git
@@ -24,3 +24,8 @@ repositories:
     type: git
     url: https://github.com/robosoft-ai/SMACC2
     version: humble
+
+  velodyne-ros:
+    type: git
+    url: https://github.com/ros-drivers/velodyne.git
+    version: ros2
