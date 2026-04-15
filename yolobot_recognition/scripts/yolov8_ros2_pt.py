@@ -21,7 +21,7 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            'image',
+            '/image_rect/left',
             self.camera_callback,
             10)
         self.subscription 

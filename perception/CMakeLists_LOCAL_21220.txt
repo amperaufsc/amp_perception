@@ -18,16 +18,6 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
-        sim_dispmap/rectify_imgs.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/conecomparisononetrack.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
         sim_dispmap/conecomparisonnode.py
         DESTINATION lib/${PROJECT_NAME}
 )

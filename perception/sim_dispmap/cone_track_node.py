@@ -25,15 +25,14 @@ class Cone_Track_Process(Node):
 
         self.calc = PerceptionProcess(baseline)
                      
-        self.image_left_sub = Subscriber(self, Image, "/oak/left/image_rect")
-        self.image_right_sub = Subscriber(self, Image, "/oak/right/image_rect")
+        self.image_left_sub = Subscriber(self, Image, "/image_rect/left")
+        self.image_right_sub = Subscriber(self, Image, "/image_rect/right")
         self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "/inferenceresult")
-        self.base_disp_map = Subscriber(self, Image, "/disparity_map/patinho")
-
+        self.base_disp_map = Subscriber(self, Image, "/disparity_map/teste")
 
         self.Track_Stamped_Base_Pub = self.create_publisher(TrackStampedWithCovariance, "/track_pub/patinho",10)
 
-        max_delay = 0.5
+        max_delay = 1.0
         self.time_sync = ApproximateTimeSynchronizer([self.image_left_sub, self.image_right_sub, self.yolo_inf_sub, self.base_disp_map],10,max_delay)
         self.time_sync.registerCallback(self.sync_callback)
         
@@ -41,24 +40,30 @@ class Cone_Track_Process(Node):
         
 
     def sync_callback(self, imgL_raw_ros_msg, imgR_raw_ros_msg, yoloinference, disp_map):
-        if disp_map.encoding == "16UC1" or None: # verifica se a mensagem stereo é a que vem da camera
-            self.get_logger().warn("Luxonis map")
-            disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
-            track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+        disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
+        track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+        is_disp_map = track_base_map[1]
+        track = track_base_map[0]
+
+        if is_disp_map:
+            self.get_logger().warn("Patinho Disparity Map")
+            for cone in track.track:
+                x = cone.location.x
+                y = cone.location.y
+                z = cone.location.z
+                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
+                self.get_logger().info(cone_location %(x,y,z))
 
         else:
-            self.get_logger().warn("Patinho map")
-            disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
-            track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
-            
-        for cone in track_base_map.track:
-            x = cone.location.x
-            y = cone.location.y
-            z = cone.location.z
-            cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
-            self.get_logger().info(cone_location %(x,y,z))
+            self.get_logger().warn("Patinho Depth Map")
+            for cone in track.track:
+                x = cone.location.x
+                y = cone.location.y
+                z = cone.location.z
+                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
+                self.get_logger().info(cone_location %(x,y,z))
 
-        self.Track_Stamped_Base_Pub.publish(track_base_map)
+        self.Track_Stamped_Base_Pub.publish(track)
     
     def Track_Stamped_With_Covariance_Msg_Pub(self, cone_track, header):
 

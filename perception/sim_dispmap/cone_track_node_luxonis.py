@@ -41,25 +41,30 @@ class Cone_Track_Process(Node):
         
 
     def sync_callback(self, imgL_raw_ros_msg, imgR_raw_ros_msg, yoloinference, disp_map):
-        if disp_map.encoding == "16UC1" or None: # verifica se a mensagem stereo é a que vem da camera
-            self.get_logger().warn("Luxonis depth map")
-            disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
-            track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+
+        disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
+        track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+        is_disp_map = track_base_map[1]
+        track = track_base_map[0]
+        if is_disp_map:
+            self.get_logger().warn("Luxonis Disparity Map")
+            for cone in track.track:
+                x = cone.location.x
+                y = cone.location.y
+                z = cone.location.z
+                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
+                self.get_logger().info(cone_location %(x,y,z))
 
         else:
-            self.get_logger().warn("Luxonis disp map")
-            disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
-            disp_map = self.calc.DisparityProcess(imgL_raw_ros_msg, imgR_raw_ros_msg)[0]
-            track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
-            
-        for cone in track_base_map.track:
-            x = cone.location.x
-            y = cone.location.y
-            z = cone.location.z
-            cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
-            self.get_logger().info(cone_location %(x,y,z))
+            self.get_logger().warn("Luxonis Depth Map")
+            for cone in track.track:
+                x = cone.location.x
+                y = cone.location.y
+                z = cone.location.z
+                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
+                self.get_logger().info(cone_location %(x,y,z))
 
-        self.Track_Stamped_Base_Pub.publish(track_base_map)
+        self.Track_Stamped_Base_Pub.publish(track)
     
     def Track_Stamped_With_Covariance_Msg_Pub(self, cone_track, header):
 
