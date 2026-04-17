@@ -30,6 +30,7 @@
 #define IMAGE_WIDTH 768
 #define IMAGE_HEIGHT 480
 #define MAX_DISTANCE 0.02
+#define ENABLE_CLUSTERING 
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
@@ -141,8 +142,15 @@ private:
 
             if (u >= inf.top && u <= inf.bottom && 
                 v >= inf.left && v <= inf.right) {
+                
+                #ifndef ENABLE_CLUSTERING
+                cloud_final->points.push_back(pt);
+                #endif
 
+                #ifdef ENABLE_CLUSTERING
                 cloud_filt->points.push_back(pt);
+                #endif
+
                 cv::circle(cv_ptr->image, cv::Point(static_cast<int>(u), static_cast<int>(v)), 1,cv::Scalar(0, 255, 0), -1);
                 if (first || pt.z > highest_point.z) {
                     highest_point = pt;
@@ -150,20 +158,34 @@ private:
                 }
             }
         }
+        #ifdef ENABLE_CLUSTERING
 
-        for (const auto& point : cloud_filt->points) {
-          if (point.z >= highest_point.z - 0.02 ){
-            std::cout<<point.z<<std::endl;
-            cloud_final->points.push_back(point);
-            cloud_aux->points.push_back(point);
-            highest_point = point;
+          if (!cloud_filt->points.empty()) {
+
+            // 1. Achar X mínimo (ponto mais próximo = cone)
+            float x_min = std::numeric_limits<float>::max();
+            for (const auto& pt : cloud_filt->points)
+                x_min = std::min(x_min, pt.x);
+
+            // 2. Aceitar só pontos próximos ao cone em profundidade
+            const float X_TOLERANCE = 0.30f; // cobre o diâmetro do cone com folga
+            for (const auto& pt : cloud_filt->points) {
+                if (pt.x <= x_min + X_TOLERANCE) {
+                    cloud_aux->points.push_back(pt);
+                    cloud_final->points.push_back(pt);
+                }
+            }
+
+            if (!cloud_aux->points.empty()) {
+                cone = clusterize(cloud_aux, inf.class_name);
+                if (cone.color != fs_msgs::msg::Cone::UNKNOWN) {
+                    track_final.track.push_back(cone);
+                }
+            }
           }
-        }
-        cone = clusterize(cloud_aux, inf.class_name);
-        if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
-          track_final.track.push_back(cone);
-        }
-        cloud_aux->points.clear();
+          cloud_aux->points.clear();
+
+        #endif
       }
 
     cloud_final->width  = static_cast<uint32_t>(cloud_final->points.size());
