@@ -1,16 +1,21 @@
 translation_matrix:
   rows: 3
   cols: 1
-  data: [-0.103033, -0.078949, 0.07585]
+  data: [-0.090365 , -0.081976, 0.057929]
 rotation_matrix:
   rows: 3
   cols: 3
-  data: [0.996,   -0.0896,    0.0,
-          0.0896,   0.996,    0.0,
+  data: [1.0,   0.0,    0.0,
+          0.0,   1.0,    0.0,
           0.0,   0.0,    1.0]
 
 #0.078949, -0.07585, 0.103033
 
 #-0.103033, -0.078949, 0.07585
+# -0.090365 , -0.081976, 0.057929 a principio deve ser esse o correto
+  
+#[0.996,   -0.0896,    0.0,
+#         0.0896,   0.996,    0.0,
+#          0.0,   0.0,    1.0]
 
-# [103.033 ,78.949, -75.85] a principio deve ser esse o correto
+# LIDAR:  X = PROFUNDIDADE, Y = LATERAL, Z = ALTURA

@@ -170,7 +170,7 @@ private:
             // 2. Aceitar só pontos próximos ao cone em profundidade
             const float X_TOLERANCE = 0.30f; // cobre o diâmetro do cone com folga
             for (const auto& pt : cloud_filt->points) {
-                if (pt.x <= x_min + X_TOLERANCE) {
+                if (pt.x <= x_min) {
                     cloud_aux->points.push_back(pt);
                     cloud_final->points.push_back(pt);
                 }
