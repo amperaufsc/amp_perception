@@ -109,12 +109,12 @@ class DatasetSaverNode(Node):
 
         img_filename = os.path.join(
             self.image_dir,
-            f"img_left_{self.save_count:04d}.jpg"
+            f"save{self.save_count:04d}.jpg"
         )
 
         pcd_filename = os.path.join(
             self.pcd_dir,
-            f"pointcloud_{self.save_count:04d}.pcd"
+            f"save{self.save_count:04d}.pcd"
         )
 
         cv2.imwrite(img_filename, img)
