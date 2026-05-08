@@ -1,7 +1,7 @@
 translation_matrix:
   rows: 3
   cols: 1
-  data: [-0.090365 , -0.081976, 0.057929]
+  data: [0.0866, -0.0630, 0.2753]
 rotation_matrix:
   rows: 3
   cols: 3
@@ -12,6 +12,7 @@ rotation_matrix:
 #0.078949, -0.07585, 0.103033
 
 #-0.103033, -0.078949, 0.07585
+
 # -0.090365 , -0.081976, 0.057929 a principio deve ser esse o correto
   
 #[0.996,   -0.0896,    0.0,
@@ -19,3 +20,6 @@ rotation_matrix:
 #          0.0,   0.0,    1.0]
 
 # LIDAR:  X = PROFUNDIDADE, Y = LATERAL, Z = ALTURA
+
+
+# MATLAB GENERATED: [0.0866, -0.0630, 0.2753]
