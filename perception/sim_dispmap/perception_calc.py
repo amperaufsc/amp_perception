@@ -11,8 +11,8 @@ class PerceptionProcess:
     # perception_calc(endereço_arq_yaml, disp_img).triangulacao(baseline,yoloinference) = ((X,Y,Z)) -> Posicao do cone no espaco 3D.
     def __init__(self, baseline):
 
-        endereco_matriz_intrinsica_left = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_left.yaml'
-        endereco_matriz_intrinsica_right = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_right.yaml'
+        endereco_matriz_intrinsica_left = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_left_22_04.yaml'
+        endereco_matriz_intrinsica_right = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_right_22_04.yaml'
         self.camera_matrix = self.yaml_reader(endereco_matriz_intrinsica_left, endereco_matriz_intrinsica_right)
 
             #OAK D LR
@@ -139,31 +139,11 @@ class PerceptionProcess:
 
         image_size = (imgL_cv.shape[1], imgL_cv.shape[0])
 
-        [kL, dL, rL_yaml, pL_yaml] = self.camera_matrix[0]
-        [kR, dR, rR_yaml, pR_yaml] = self.camera_matrix[1]
+        [k_left, d_left, r_left, p_left] = self.camera_matrix[0]
+        [k_right, d_right, r_right, p_right] = self.camera_matrix[1]
 
-        R = np.array([
-            1.0000, -0.0014,  0.0045,
-            0.0014,  1.0000, -0.0008,
-            -0.0045,  0.0008,  1.0000
-        ]).reshape((3, 3))
-
-        T = np.array([-147.9689, 0.4888, 0.4957])
-
-        R1, R2, P1, P2, Q, roi1, roi2 = cv2.stereoRectify(
-            cameraMatrix1=kL,
-            distCoeffs1=dL,
-            cameraMatrix2=kR,
-            distCoeffs2=dR,
-            imageSize=image_size,
-            R=R,
-            T=T,
-            flags=cv2.CALIB_ZERO_DISPARITY,
-            alpha=1
-        )
-
-        mapLx, mapLy = cv2.initUndistortRectifyMap(kL, dL, R1, P1, image_size, cv2.CV_32FC1)
-        mapRx, mapRy = cv2.initUndistortRectifyMap(kR, dR, R2, P2, image_size, cv2.CV_32FC1)
+        mapLx, mapLy = cv2.initUndistortRectifyMap(k_left, d_left, r_left, p_left, image_size, cv2.CV_32FC1)
+        mapRx, mapRy = cv2.initUndistortRectifyMap(k_right, d_right, r_right, p_right, image_size, cv2.CV_32FC1)
 
         rectL_cv = cv2.remap(imgL_cv, mapLx, mapLy, cv2.INTER_LINEAR)
         rectR_cv = cv2.remap(imgR_cv, mapRx, mapRy, cv2.INTER_LINEAR)
@@ -177,6 +157,9 @@ class PerceptionProcess:
         
         imgL_cv = bridge.imgmsg_to_cv2(imgL_ros_msg)
         imgR_cv = bridge.imgmsg_to_cv2(imgR_ros_msg)
+
+        imgL_cv = cv2.cvtColor(imgL_cv, cv2.COLOR_BGR2GRAY)
+        imgR_cv = cv2.cvtColor(imgR_cv, cv2.COLOR_BGR2GRAY)
 
         stereo = cv2.StereoSGBM_create(
             minDisparity=0,
@@ -201,25 +184,25 @@ class PerceptionProcess:
     def yaml_reader(self, endereco_left, endereco_right):
         try:
             saida = [None, None]
-            with open(endereco_left, 'r') as f:
+            with open(endereco_left, 'r') as file:
                 
-                data = yaml.safe_load(f)
-                kL = np.array(data['camera_matrix']['data']).reshape((3, 3))
-                dL = np.array(data['distortion_coefficients']['data']).reshape((1, -1))
-                rL = np.array(data['rectification_matrix']['data']).reshape((3, 3))
-                pL = np.array(data['projection_matrix']['data']).reshape((3, 4))
+                data = yaml.safe_load(file)
+                kL = np.array(data['camera_matrix']['data'], dtype=np.float64)
+                dL = np.array(data['distortion_coefficients']['data'], dtype=np.float64)
+                rL = np.array(data['rectification_matrix']['data'], dtype=np.float64)
+                pL = np.array(data['projection_matrix']['data'], dtype=np.float64)
 
-                saida[0] = (kL, dL, rL, pL)
+                saida[0] = [kL, dL, rL, pL]
             
-            with open(endereco_right, 'r') as f:
+            with open(endereco_right, 'r') as file:
 
-                data = yaml.safe_load(f)
-                kR = np.array(data['camera_matrix']['data']).reshape((3, 3))
-                dR = np.array(data['distortion_coefficients']['data']).reshape((1, -1))
-                rR = np.array(data['rectification_matrix']['data']).reshape((3, 3))
-                pR = np.array(data['projection_matrix']['data']).reshape((3, 4))
+                data = yaml.safe_load(file)
+                kR = np.array(data['camera_matrix']['data'], dtype=np.float64)
+                dR = np.array(data['distortion_coefficients']['data'], dtype=np.float64)
+                rR = np.array(data['rectification_matrix']['data'], dtype=np.float64)
+                pR = np.array(data['projection_matrix']['data'], dtype=np.float64)
 
-                saida[1] = (kR, dR, rR, pR)
+                saida[1] = [kR, dR, rR, pR]
 
             return saida
                 
