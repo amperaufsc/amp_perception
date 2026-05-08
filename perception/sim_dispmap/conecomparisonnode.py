@@ -1,123 +1,164 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from message_filters import Subscriber, ApproximateTimeSynchronizer
 import matplotlib.pyplot as plt
 import numpy as np
 from fs_msgs.msg import TrackStampedWithCovariance
 
-class DepthValidatorNode(Node):
+class DepthBarComparisonNode(Node):
     def __init__(self):
-        super().__init__('depth_validator_node')
+        super().__init__('depth_bar_comparison_node')
 
-        # Subscribers
-        self.sub_t1 = Subscriber(self, TrackStampedWithCovariance, '/track_pub/patinho')
-        self.sub_t2 = Subscriber(self, TrackStampedWithCovariance, '/track_pub/luxonis')
+        self.subscription = self.create_subscription(
+            TrackStampedWithCovariance,
+            '/track_pub/patinho',
+            self.callback,
+            10)
 
-        # Sincronização (slop de 1.0s costuma ser suficiente para evitar perdas)
-        self.ts = ApproximateTimeSynchronizer([self.sub_t1, self.sub_t2], 10, 1.0)
-        self.ts.registerCallback(self.callback)
+        # Ground Truth definido (Lista completa)
+        self.full_gt_z = [1.51, 3.02, 4.53, 6.04, 7.55, 9.06, 10.57, 12.08]
 
-        # Configuração: Mapa Espacial e Gráfico de Erro Residual
-        self.fig, (self.ax_map, self.ax_error) = plt.subplots(2, 1, figsize=(10, 12))
-        self.fig.tight_layout(pad=5.0)
-        plt.ion()
+        # Nomenclatura base
+        self.full_labels = [f'Cone {i+1}' for i in range(len(self.full_gt_z))]
+
+        # ==========================================
+        # Configuração das Janelas do Gráfico
+        # ==========================================
+        plt.ion() 
+        
+        self.fig_bar, self.ax_bar = plt.subplots(figsize=(10, 6))
+        self.fig_bar.canvas.manager.set_window_title('Comparação de Profundidade: Real vs Estimado')
+        
+        self.fig_err, self.ax_err = plt.subplots(figsize=(10, 6))
+        self.fig_err.canvas.manager.set_window_title('Análise de Erro por Distância')
+        
         plt.show()
 
-    def extract_data(self, msg):
-        # Extraímos como array numpy para facilitar cálculos matemáticos
-        coords = []
-        for cone in msg.track: 
-            coords.append([cone.location.x, cone.location.z])
-        return np.array(coords) if coords else np.empty((0, 2))
+    def callback(self, msg):
+        # 1. Extrai as profundidades detectadas (não precisa ordenar ainda)
+        detected_z = [cone.location.z for cone in msg.track]
+        
+        active_meas = []
+        active_gt = []
+        active_labels = []
 
-    def calculate_depth_errors(self, gt_points, detected_points):
-        """
-        Para cada cone do GT, encontra o detectado mais próximo e calcula o erro de Z.
-        Retorna (Distância_GT, Erro_Z)
-        """
-        gt_depths = []
-        errors = []
+        # 2. Pareamento Inteligente (Data Association)
+        # Para cada cone que a câmera viu, procura qual é o Ground Truth mais perto dele
+        for z_meas in detected_z:
+            # Calcula a distância absoluta deste cone para todos os GTs possíveis
+            diferencas = np.abs(np.array(self.full_gt_z) - z_meas)
+            
+            # Pega o índice do GT que tem a menor diferença
+            idx_closest = np.argmin(diferencas)
+            gt_correspondente = self.full_gt_z[idx_closest]
+            
+            # Adiciona aos pares ativos
+            active_meas.append(z_meas)
+            active_gt.append(gt_correspondente)
+            
+            # Descobre o nome do cone (Cone 1, Cone 2, etc.) baseado na posição original do GT
+            active_labels.append(self.full_labels[idx_closest])
 
-        for gt in gt_points:
-            if detected_points.shape[0] == 0:
-                break
+        # 3. Ordenação Simultânea (Para o gráfico de barras não ficar embaralhado)
+        if len(active_meas) > 0:
+            # Junta o GT, o Medido e o Label, ordena pelo valor do GT, e separa de volta
+            pares_ordenados = sorted(zip(active_gt, active_meas, active_labels))
+            active_gt, active_meas, active_labels = zip(*pares_ordenados)
             
-            # Calcula distância euclidiana (X e Z) para parear o cone
-            dists = np.linalg.norm(detected_points - gt, axis=1)
-            idx_min = np.argmin(dists)
+            # Converte de volta para lista
+            active_gt = list(active_gt)
+            active_meas = list(active_meas)
+            active_labels = list(active_labels)
+
+        # Envia apenas os dados pareados e ordenados para o plot
+        self.update_plot(active_meas, active_gt, active_labels)
+
+    def update_plot(self, measured_z, gt_z, labels):
+        self.ax_bar.cla()
+        self.ax_err.cla()
+        
+        num_cones = len(measured_z)
+
+        # ==========================================
+        # JANELA 1: GRÁFICO DE BARRAS (Somente cones detectados)
+        # ==========================================
+        if num_cones > 0:
+            x = np.arange(num_cones)
+            width = 0.35
+
+            rects1 = self.ax_bar.bar(x - width/2, gt_z, width, label='Z Real (GT)', color='forestgreen', alpha=0.7)
+            rects2 = self.ax_bar.bar(x + width/2, measured_z, width, label='Z Estimado (Patinho)', color='royalblue')
+
+            self.ax_bar.set_xticks(x)
+            self.ax_bar.set_xticklabels(labels)
             
-            # Só pareia se o cone estiver a menos de 1.2m (evita parear com cones errados)
-            if dists[idx_min] < 1.2:
-                z_gt = gt[1]
-                z_detected = detected_points[idx_min][1]
+            # Zoom Dinâmico
+            teto_grafico = max(max(gt_z), max(measured_z))
+            self.ax_bar.set_ylim(0, max(5.0, teto_grafico * 1.2))
+
+            self.ax_bar.bar_label(rects1, padding=3, fmt='%.2fm')
+            self.ax_bar.bar_label(rects2, padding=3, fmt='%.2fm')
+        else:
+            # Mensagem caso o carro não veja nada
+            self.ax_bar.text(0.5, 0.5, 'Nenhum Cone Detectado', horizontalalignment='center', verticalalignment='center', transform=self.ax_bar.transAxes, fontsize=14, color='gray')
+            self.ax_bar.set_ylim(0, 5.0)
+
+        self.ax_bar.set_ylabel('Distância (Z) [m]')
+        self.ax_bar.set_title('Comparação de Profundidade: Real vs Estimado')
+        self.ax_bar.legend()
+        self.ax_bar.grid(axis='y', linestyle=':', alpha=0.5)
+
+
+        # ==========================================
+        # JANELA 2: ERRO VS DISTÂNCIA
+        # ==========================================
+        if num_cones > 0:
+            # Como já garantimos que medido e GT têm o mesmo tamanho e são apenas cones válidos, o erro é direto:
+            erros_abs = np.abs(np.array(measured_z) - np.array(gt_z))
+
+            self.ax_err.scatter(gt_z, erros_abs, color='red', alpha=0.7, edgecolors='black', s=80, label='Erro (Cone)')
+            
+            # Linha de tendência quadrática (exige no mínimo 3 pontos para formar a parábola)
+            if num_cones > 2:
+                a, b, c = np.polyfit(gt_z, erros_abs, 2)
+                x_linha = np.linspace(min(self.full_gt_z) - 0.5, max(self.full_gt_z) + 0.5, 100)
+                y_linha = a * (x_linha**2) + b * x_linha + c
+                self.ax_err.plot(x_linha, y_linha, color='purple', linestyle='--', linewidth=2, 
+                                 label=f'Tendência (y = {a:.3f}x² + {b:.3f}x + {c:.3f})')
+
+            # Zoom Dinâmico
+            min_x = min(gt_z)
+            max_x = max(gt_z)
+            max_y = max(erros_abs)
+            
+            margem_x = (max_x - min_x) * 0.15
+            if margem_x == 0: margem_x = 1.0 
                 
-                gt_depths.append(z_gt)
-                errors.append(z_detected - z_gt) # Erro Positivo = Sensor viu mais longe
+            self.ax_err.set_xlim(left=max(0, min_x - margem_x), right=max_x + margem_x)
+            self.ax_err.set_ylim(bottom=-0.05, top=max(0.1, max_y * 1.3))
         
-        return gt_depths, errors
+        else:
+            self.ax_err.set_xlim(0, 10.0)
+            self.ax_err.set_ylim(-0.05, 1.0)
 
-    def callback(self, t1_msg, t2_msg):
-        # Ground Truth fixo da "Pista Certi Bag" (X, Z)
-        gt_points = np.array([
-            [0.0, 2], [0.7, 2]
-        ])
+        self.ax_err.axhline(0, color='green', linestyle='-', linewidth=2, label='Erro Zero (Ideal)')
+        self.ax_err.set_title('Comportamento do Erro de Profundidade')
+        self.ax_err.set_xlabel('Distância Real - GT [m]')
+        self.ax_err.set_ylabel('Erro Absoluto |Track - GT| [m]')
+        self.ax_err.grid(True, linestyle=':', alpha=0.6)
+        self.ax_err.legend(loc='upper left')
 
-        t1_data = self.extract_data(t1_msg)
-        t2_data = self.extract_data(t2_msg)
-
-        # Cálculo dos erros baseados na distância GT
-        dist_gt1, err1 = self.calculate_depth_errors(gt_points, t1_data)
-        dist_gt2, err2 = self.calculate_depth_errors(gt_points, t2_data)
-
-        self.update_plots(gt_points, t1_data, t2_data, dist_gt1, err1, dist_gt2, err2)
-
-    def update_plots(self, gt_points, t1, t2, d1, e1, d2, e2):
-        self.ax_map.cla()
-        self.ax_error.cla()
+        # ==========================================
+        # Renderização Sincronizada
+        # ==========================================
+        self.fig_bar.canvas.draw_idle()
+        self.fig_err.canvas.draw_idle()
         
-        # --- GRÁFICO 1: MAPA ESPACIAL (LARGURA VS PROFUNDIDADE) ---
-        self.ax_map.scatter(gt_points[:,0], gt_points[:,1], s=150, edgecolors='g', facecolors='none', label='GT Real', linewidth=2)
-        if t1.size > 0: self.ax_map.scatter(t1[:,0], t1[:,1], c='blue', label='Patinho')
-        if t2.size > 0: self.ax_map.scatter(t2[:,0], t2[:,1], c='red', marker='x', label='Luxonis')
-        
-        self.ax_map.set_title("Mapa 2D: Largura (X) vs Profundidade (Z)")
-        self.ax_map.set_xlabel("Largura (m)")
-        self.ax_map.set_ylabel("Profundidade (m)")
-        self.ax_map.axis('equal') 
-        self.ax_map.legend()
-        self.ax_map.grid(True, alpha=0.3)
-
-        # --- GRÁFICO 2: ERRO DE PROFUNDIDADE EM FUNÇÃO DA DISTÂNCIA ---
-        self.ax_error.axhline(y=0, color='black', linestyle='-', alpha=0.5) # Linha de erro zero
-        
-        if d1:
-            self.ax_error.scatter(d1, e1, c='blue', label='Erro Patinho', s=60)
-            # Linha de tendência para Patinho
-            coeffs = np.polyfit(d1, e1, 1)
-            poly = np.poly1d(coeffs)
-            self.ax_error.plot(d1, poly(d1), "b--", alpha=0.4)
-
-        if d2:
-            self.ax_error.scatter(d2, e2, c='red', marker='x', label='Erro Luxonis', s=60)
-            # Linha de tendência para Luxonis
-            coeffs = np.polyfit(d2, e2, 1)
-            poly = np.poly1d(coeffs)
-            self.ax_error.plot(d2, poly(d2), "r--", alpha=0.4)
-
-        self.ax_error.set_title("Erro de Medição Z vs. Distância Real")
-        self.ax_error.set_ylabel("Erro Residual (Detectado - GT) [m]")
-        self.ax_error.set_xlabel("Distância Real (GT Z) [m]")
-        self.ax_error.set_ylim(-0.8, 0.8) # Ajuste o zoom do erro aqui
-        self.ax_error.legend()
-        self.ax_error.grid(True, linestyle=':', alpha=0.6)
-
-        plt.draw()
         plt.pause(0.01)
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DepthValidatorNode()
+    node = DepthBarComparisonNode()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
