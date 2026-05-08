@@ -18,7 +18,12 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
-        sim_dispmap/rectify_imgs.py
+        sim_dispmap/camera_info.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
+        sim_dispmap/capture_images.py
         DESTINATION lib/${PROJECT_NAME}
 )
 install(
