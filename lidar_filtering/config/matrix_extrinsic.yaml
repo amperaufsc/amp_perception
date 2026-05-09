@@ -1,7 +1,7 @@
 translation_matrix:
   rows: 3
   cols: 1
-  data: [0.0866, -0.0630, 0.2753]
+  data: [0.2753, -0.0630, 0.0866]
 rotation_matrix:
   rows: 3
   cols: 3
