@@ -27,7 +27,7 @@
 #include <pcl/search/kdtree.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
-const int MAX_DISTANCE = 0.3;
+const float MAX_DISTANCE = 0.1f;
 // #define ENABLE_CLUSTERING 
 
 using namespace message_filters;
