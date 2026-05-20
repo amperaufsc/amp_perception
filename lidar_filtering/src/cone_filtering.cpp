@@ -27,10 +27,8 @@
 #include <pcl/search/kdtree.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
-#define IMAGE_WIDTH 768
-#define IMAGE_HEIGHT 480
-#define MAX_DISTANCE 0.02
-#define ENABLE_CLUSTERING 
+const int MAX_DISTANCE = 0.3;
+// #define ENABLE_CLUSTERING 
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
@@ -162,15 +160,12 @@ private:
 
           if (!cloud_filt->points.empty()) {
 
-            // 1. Achar X mínimo (ponto mais próximo = cone)
             float x_min = std::numeric_limits<float>::max();
             for (const auto& pt : cloud_filt->points)
                 x_min = std::min(x_min, pt.x);
 
-            // 2. Aceitar só pontos próximos ao cone em profundidade
-            const float X_TOLERANCE = 0.30f; // cobre o diâmetro do cone com folga
             for (const auto& pt : cloud_filt->points) {
-                if (pt.x <= x_min) {
+                if (pt.x <= x_min + MAX_DISTANCE) {
                     cloud_aux->points.push_back(pt);
                     cloud_final->points.push_back(pt);
                 }

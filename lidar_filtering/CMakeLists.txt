@@ -131,4 +131,11 @@ install(PROGRAMS
   scripts/convert_to_pcd.py
 DESTINATION lib/${PROJECT_NAME}
 )
+
+option(ENABLE_CLUSTERING "Enable point cloud clustering" ON)
+
+if(ENABLE_CLUSTERING)
+    target_compile_definitions(cone_filtering PRIVATE ENABLE_CLUSTERING)
+endif()
+
 ament_package()
