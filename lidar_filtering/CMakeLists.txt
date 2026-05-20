@@ -129,6 +129,7 @@ DESTINATION lib/${PROJECT_NAME}
 install(PROGRAMS
   scripts/lidar_track_plot.py
   scripts/convert_to_pcd.py
+  scripts/t.py
 DESTINATION lib/${PROJECT_NAME}
 )
 
