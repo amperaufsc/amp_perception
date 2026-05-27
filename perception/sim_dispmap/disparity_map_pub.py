@@ -29,10 +29,10 @@ class Disparity_Publisher(Node):
         self.img_left = Subscriber(self, Image, "/oak/left/image_raw")
         self.img_right = Subscriber(self, Image, "/oak/right/image_raw")
 
-        self.disp_patinho_map = self.create_publisher(Image, "/disparity_map/teste", 10)
-        self.img_L_rect = self.create_publisher(Image, "/image_rect/left", 10)
-        self.img_R_rect = self.create_publisher(Image, "/image_rect/right", 10)
-        self.img_lines = self.create_publisher(Image, "/image_rect/lines", 10)
+        self.disp_patinho_map = self.create_publisher(Image, "/disparity_raw", 10)
+        self.img_L_rect = self.create_publisher(Image, "/patinho/left/image_rect", 10)
+        self.img_R_rect = self.create_publisher(Image, "/patinho/right/image_rect", 10)
+        #self.img_lines = self.create_publisher(Image, "/image_rect/lines", 10)
         
         max_delay = 0.5
         self.time_sync = ApproximateTimeSynchronizer([self.img_left,self.img_right],10,max_delay)
@@ -43,14 +43,17 @@ class Disparity_Publisher(Node):
         self.get_logger().warn("chegou aqui")
         disp_map = self.calc.DisparityProcess(img_L_rect_msg, img_R_rect_msg)[1]
 
-        combined_img = self.draw_epilines(img_L_rect_msg, img_R_rect_msg)
+        #combined_img = self.draw_epilines(img_L_rect_msg, img_R_rect_msg)
 
-        combined_img = bridge.cv2_to_imgmsg(combined_img)
+        #combined_img = bridge.cv2_to_imgmsg(combined_img)
         disp_map = bridge.cv2_to_imgmsg(disp_map)
-        disp_map.header = img_L_rect_msg.header
+        disp_map.header = img_L.header
+
+        img_L_rect_msg.header = img_L.header
+        img_R_rect_msg.header = img_R.header
         
         self.disp_patinho_map.publish(disp_map)
-        self.img_lines.publish(combined_img)
+        #self.img_lines.publish(combined_img)
         self.img_L_rect.publish(img_L_rect_msg)
         self.img_R_rect.publish(img_R_rect_msg)
             

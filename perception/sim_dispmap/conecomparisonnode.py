@@ -11,23 +11,22 @@ class DepthBarComparisonNode(Node):
 
         self.subscription = self.create_subscription(
             TrackStampedWithCovariance,
-            '/track_pub/luxonis',
+            '/track_pub/patinho',
             self.callback,
             10)
 
         # ==========================================
         # Mestre da Realidade (Ground Truth Fixo)
         # ==========================================
-        self.full_gt_z = [1.51, 3.02, 4.53, 6.04, 7.55, 9.06, 10.57, 12.08]
+        self.full_gt_z = [3.02, 3.02, 6.04, 6.04, 9.06, 9.06, 12.08, 12.08, 15.1, 15.1]
         self.full_labels = [f'Cone {i+1}' for i in range(len(self.full_gt_z))]
-
-        self.association_threshold = 0.8 
 
         # ==========================================
         # Filtro de Suavização (EMA) para Porcentagem
+        # Agora baseado no ÍNDICE da lista, não no valor!
         # ==========================================
         self.alpha_smooth = 0.15 
-        self.smoothed_pct_errors = {gt: None for gt in self.full_gt_z}
+        self.smoothed_pct_errors = [None for _ in range(len(self.full_gt_z))]
 
         # ==========================================
         # Configuração das Janelas do Gráfico
@@ -48,26 +47,39 @@ class DepthBarComparisonNode(Node):
         measured_z_fixed = []
         pct_errors_fixed = []
 
-        # Associação ancorada no Ground Truth
-        for gt in self.full_gt_z:
-            candidatos = [z for z in detected_z if abs(z - gt) <= self.association_threshold]
+        # Fazemos uma cópia das detecções deste frame. 
+        # Assim que um cone for associado, ele é removido da lista.
+        available_detections = detected_z.copy()
+
+        # Usamos enumerate(i) para salvar o erro no índice exato
+        for i, gt in enumerate(self.full_gt_z):
+            
+            # Limite Dinâmico: Aceita 20% de erro da distância real 
+            # Garante no mínimo 0.8m para cones muito próximos
+            dynamic_threshold = max(0.8, 0.20 * gt)
+            
+            candidatos = [z for z in available_detections if abs(z - gt) <= dynamic_threshold]
 
             if candidatos:
+                # Encontra a medição do SGBM que mais se aproxima do Ground Truth
                 best_meas = min(candidatos, key=lambda z: abs(z - gt))
                 measured_z_fixed.append(best_meas)
+                
+                # Remove da lista para o próximo cone GT não pegar essa mesma leitura
+                available_detections.remove(best_meas)
 
                 # ==========================================
-                # NOVO: Cálculo do Erro Percentual
-                # Fórmula: (|Medido - Real| / Real) * 100
+                # Cálculo do Erro Percentual
                 # ==========================================
                 inst_pct_error = (abs(best_meas - gt) / gt) * 100.0
                 
-                if self.smoothed_pct_errors[gt] is None:
-                    self.smoothed_pct_errors[gt] = inst_pct_error
+                # Aplica suavização EMA usando o índice 'i'
+                if self.smoothed_pct_errors[i] is None:
+                    self.smoothed_pct_errors[i] = inst_pct_error
                 else:
-                    self.smoothed_pct_errors[gt] = (self.alpha_smooth * inst_pct_error) + ((1 - self.alpha_smooth) * self.smoothed_pct_errors[gt])
+                    self.smoothed_pct_errors[i] = (self.alpha_smooth * inst_pct_error) + ((1 - self.alpha_smooth) * self.smoothed_pct_errors[i])
                 
-                pct_errors_fixed.append(self.smoothed_pct_errors[gt])
+                pct_errors_fixed.append(self.smoothed_pct_errors[i])
             else:
                 measured_z_fixed.append(0.0)
                 pct_errors_fixed.append(None) 
@@ -106,7 +118,7 @@ class DepthBarComparisonNode(Node):
         self.ax_bar.grid(axis='y', linestyle=':', alpha=0.5)
 
         # ==========================================
-        # JANELA 2: ERRO PERCENTUAL VS DISTÂNCIA 
+        # JANELA 2: ERRO PERCENTUAL VS DISTÂNCIA (QUADRÁTICA)
         # ==========================================
         valid_gt = [gt for gt, err in zip(self.full_gt_z, smoothed_pct_errors) if err is not None]
         valid_err = [err for err in smoothed_pct_errors if err is not None]
@@ -114,38 +126,38 @@ class DepthBarComparisonNode(Node):
         if len(valid_gt) > 0:
             self.ax_err.scatter(valid_gt, valid_err, color='red', alpha=0.7, edgecolors='black', s=80, label='Erro Relativo (%)')
             
-            # Linha de tendência linear (Grau 1 faz mais sentido para erro percentual estéreo)
-            if len(valid_gt) > 1:
-                z = np.polyfit(valid_gt, valid_err, 1)
+            # Linha de tendência polinomial de 2º Grau (Parábola)
+            if len(valid_gt) > 2:
+                z = np.polyfit(valid_gt, valid_err, 2)
                 p = np.poly1d(z)
                 
                 x_linha = np.linspace(min(self.full_gt_z) - 0.5, max(self.full_gt_z) + 0.5, 100)
                 y_linha = p(x_linha)
+                
+                equacao_str = f'Tendência (y = {z[0]:.4f}x² + {z[1]:.2f}x + {z[2]:.2f})'
+                
                 self.ax_err.plot(x_linha, y_linha, color='purple', linestyle='--', linewidth=2, 
-                                 label=f'Tendência (y = {z[0]:.2f}x + {z[1]:.2f})')
+                                 label=equacao_str)
 
             min_x = min(self.full_gt_z)
             max_x = max(self.full_gt_z)
             
-            # Trava o gráfico em um limite razoável (ex: se o erro for 2%, mostra até 10% para ficar bonito)
+            # Trava o gráfico em um limite razoável para visualização
             max_y = max(valid_err) if valid_err else 5.0
-            teto_percentual = max(10.0, max_y * 1.5) # No mínimo 10% no eixo Y
+            teto_percentual = max(10.0, max_y * 1.5) 
                 
             self.ax_err.set_xlim(left=max(0, min_x - 0.5), right=max_x + 0.5)
             self.ax_err.set_ylim(bottom=-0.5, top=teto_percentual)
             
-            # Formatação do eixo Y para mostrar o símbolo '%'
             from matplotlib.ticker import PercentFormatter
             self.ax_err.yaxis.set_major_formatter(PercentFormatter(decimals=1))
         
         else:
-            self.ax_err.set_xlim(0, 8.0)
+            self.ax_err.set_xlim(0, 16.0)
             self.ax_err.set_ylim(-0.5, 10.0)
             self.ax_err.text(0.5, 0.5, 'Sem dados de erro (Câmera cega)', horizontalalignment='center', verticalalignment='center', transform=self.ax_err.transAxes, fontsize=14, color='gray')
 
         self.ax_err.axhline(0, color='green', linestyle='-', linewidth=2, label='0% Erro (Ideal)')
-        
-        # Adiciona uma "Linha de Corte de Validação" (Threshold) em 5%
         self.ax_err.axhline(5.0, color='orange', linestyle=':', linewidth=2, label='Meta Validação (5%)')
 
         self.ax_err.set_title('Validação de Erro Relativo (Suavizado)')
