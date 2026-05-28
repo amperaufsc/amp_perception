@@ -27,7 +27,7 @@ class Cone_Track_Process(Node):
                      
         self.image_left_sub = Subscriber(self, Image, "/oak/left/image_raw")
         self.image_right_sub = Subscriber(self, Image, "/oak/right/image_raw")
-        self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "/inferenceresult")
+        self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "/inference")
         self.base_disp_map = Subscriber(self, Image, "/oak/stereo/image_raw")
 
 

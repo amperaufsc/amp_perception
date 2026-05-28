@@ -29,9 +29,9 @@ class Disparity_Publisher(Node):
         self.img_left = Subscriber(self, Image, "/oak/left/image_raw")
         self.img_right = Subscriber(self, Image, "/oak/right/image_raw")
 
-        self.disp_patinho_map = self.create_publisher(Image, "/disparity_raw", 10)
-        self.img_L_rect = self.create_publisher(Image, "/patinho/left/image_rect", 10)
-        self.img_R_rect = self.create_publisher(Image, "/patinho/right/image_rect", 10)
+        self.disp_patinho_map = self.create_publisher(Image, "/disparity", 10)
+        self.img_L_rect = self.create_publisher(Image, "/patinho/image_rect/left", 10)
+        self.img_R_rect = self.create_publisher(Image, "/patinho/image_rect/right", 10)
         #self.img_lines = self.create_publisher(Image, "/image_rect/lines", 10)
         
         max_delay = 0.5

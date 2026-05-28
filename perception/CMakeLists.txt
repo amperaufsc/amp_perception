@@ -18,6 +18,16 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
+        sim_dispmap/img_descompress.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
+        sim_dispmap/disparity_map.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
         sim_dispmap/camera_info.py
         DESTINATION lib/${PROJECT_NAME}
 )

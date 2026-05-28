@@ -21,12 +21,12 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            '/patinho/left/image_rect',
+            '/oak/left/image_raw',
             self.camera_callback,
             10)
         self.subscription 
 
-        self.yolov8_pub = self.create_publisher(Yolov8Inference, "inferenceresult", 1)
+        self.yolov8_pub = self.create_publisher(Yolov8Inference, "/inference", 1)
         self.img_pub = self.create_publisher(Image, "inferenceimg", 1)
 
         # self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best.pt')
