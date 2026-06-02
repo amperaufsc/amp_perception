@@ -21,16 +21,16 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            '/oak/left/image_raw',
+            'image',
             self.camera_callback,
             10)
         self.subscription 
 
-        self.yolov8_pub = self.create_publisher(Yolov8Inference, "/inference", 1)
+        self.yolov8_pub = self.create_publisher(Yolov8Inference, "inferenceresult", 1)
         self.img_pub = self.create_publisher(Image, "inferenceimg", 1)
 
         # self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best.pt')
-        self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/teste_19_05/best.pt')
+        self.declare_parameter('yolov8_path')
 
         self.yolov8_path = self.get_parameter('yolov8_path').value
 
@@ -39,7 +39,7 @@ class Camera_subscriber(Node):
 
         self.get_logger().info(f"{self.confidence_threshold}")
 
-        self.model = YOLO(self.yolov8_path, task='detect')
+        self.model = YOLO(self.yolov8_path)
 
     def camera_callback(self, data):
 

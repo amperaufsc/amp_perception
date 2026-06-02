@@ -25,12 +25,12 @@ class Cone_Track_Process(Node):
 
         self.calc = PerceptionProcess(baseline)
                      
-        self.image_left_sub = Subscriber(self, Image, "/patinho/image_rect/left")
-        self.image_right_sub = Subscriber(self, Image, "/patinho/image_rect/right")
-        self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "/inference")
-        self.base_disp_map = Subscriber(self, Image, "/disparity")
+        self.image_left_sub = Subscriber(self, Image, "image_rect/left")
+        self.image_right_sub = Subscriber(self, Image, "image_rect/right")
+        self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "inferenceresult")
+        self.base_disp_map = Subscriber(self, Image, "disparity")
 
-        self.Track_Stamped_Base_Pub = self.create_publisher(TrackStampedWithCovariance, "/track_pub/patinho",10)
+        self.Track_Stamped_Base_Pub = self.create_publisher(TrackStampedWithCovariance, "track",10)
         max_delay = 1.0
         self.time_sync = ApproximateTimeSynchronizer([self.image_left_sub, self.image_right_sub, self.yolo_inf_sub, self.base_disp_map],10,max_delay)
         self.time_sync.registerCallback(self.sync_callback)

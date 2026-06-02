@@ -11,14 +11,13 @@ class DepthBarComparisonNode(Node):
 
         self.subscription = self.create_subscription(
             TrackStampedWithCovariance,
-            '/track_pub/patinho',
+            '/namespace/track',
             self.callback,
             10)
-
         # ==========================================
         # Mestre da Realidade (Ground Truth Fixo)
         # ==========================================
-        self.full_gt_z = [3.02, 3.02, 6.04, 6.04, 9.06, 9.06, 12.08, 12.08, 15.1, 15.1]
+        self.full_gt_z = [2,3,4,5,6,7,8,9,10,11,12]
         self.full_labels = [f'Cone {i+1}' for i in range(len(self.full_gt_z))]
 
         # ==========================================
@@ -86,6 +85,14 @@ class DepthBarComparisonNode(Node):
 
         self.update_plot(measured_z_fixed, pct_errors_fixed)
 
+    def track_gt_pub(self, track_msg):
+        track = track_msg.track
+
+        for i in range(len(track)):
+            track[i].z = self.full_gt_z[i]
+        
+        self
+
     def update_plot(self, measured_z, smoothed_pct_errors):
         self.ax_bar.cla()
         self.ax_err.cla()
@@ -97,7 +104,7 @@ class DepthBarComparisonNode(Node):
         # JANELA 1: GRÁFICO DE BARRAS (Mantido em Metros)
         # ==========================================
         rects1 = self.ax_bar.bar(x - width/2, self.full_gt_z, width, label='Z Real (GT)', color='forestgreen', alpha=0.7)
-        rects2 = self.ax_bar.bar(x + width/2, measured_z, width, label='Z Estimado (Patinho)', color='royalblue')
+        rects2 = self.ax_bar.bar(x + width/2, measured_z, width, label='Z Estimado', color='royalblue')
 
         self.ax_bar.set_xticks(x)
         self.ax_bar.set_xticklabels(self.full_labels)
