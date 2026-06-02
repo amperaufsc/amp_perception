@@ -217,11 +217,13 @@ private:
 
       // Transforma o ponto médio para o frame da câmera
       Eigen::Vector4f p_lidar(mx, my, mz, 1.0f);
-      Eigen::Vector4f p_cam = RT * p_lidar;
+      //Eigen::Vector4f p_cam = RT * p_lidar;
 
-      cone_out.location.x = p_cam(2);
-      cone_out.location.y = -p_cam(0);
+      cone_out.location.x = mx;
+      cone_out.location.y = my;
       cone_out.location.z = 0.0f; // -p_cam(1)
+
+      std::cout<<"x= "<<mx<<std::endl;
 
       if (mx == 0.0 || my == 0.0 || mz == 0.0){
         cone_out.color = fs_msgs::msg::Cone::UNKNOWN;

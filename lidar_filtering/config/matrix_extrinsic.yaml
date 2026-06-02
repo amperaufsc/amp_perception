@@ -16,6 +16,16 @@ rotation_matrix:
 # LIDAR:  X = PROFUNDIDADE, Y = LATERAL, Z = ALTURA
 
 
-# MATLAB GENERATED: [0.0866, -0.0630, 0.2753]
+# MATLAB GENERATED: t = [0.0866, -0.0630, 0.2753]
+
+# R = [0.9945,  -0.1045,   0.0,
+#      0.1045,   0.9945,   0.0,
+#      0.0,      0.0,      1.0]
 
 # CHANGED X<->Z AND ITS WORKING: [0.2753, -0.0630, 0.0866]
+
+# ROTATION MATRIX FOR BLOCO B TEST: 
+
+# [0.996,   -0.0896,    0.0,
+# 0.0896,   0.996,    0.0,
+# 0.0,      0.0,        1.0]
