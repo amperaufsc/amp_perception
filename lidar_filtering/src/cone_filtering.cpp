@@ -28,7 +28,9 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 const float MAX_DISTANCE = 0.1f;
-// #define ENABLE_CLUSTERING 
+#define ENABLE_CLUSTERING
+//#define X_BASED
+#define Z_BASED
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
@@ -39,12 +41,12 @@ typedef sync_policies::ApproximateTime<
 class PointCloudHandler : public rclcpp::Node {
 public:
   PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
-  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_system_default}
-  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_system_default} 
+  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
+  , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
   , sub_image{this, "/oak/left/image_raw", rmw_qos_profile_sensor_data} 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
-      MySyncPolicy(10000), sub_pointcloud, sub_inference,sub_image);
+      MySyncPolicy(30), sub_pointcloud, sub_inference,sub_image);
     sync_->registerCallback(
       std::bind(&PointCloudHandler::cloud_callback,
                 this,
@@ -159,18 +161,31 @@ private:
         #ifdef ENABLE_CLUSTERING
 
           if (!cloud_filt->points.empty()) {
+            
+            #ifdef X_BASED
 
             float x_min = std::numeric_limits<float>::max();
             for (const auto& pt : cloud_filt->points)
                 x_min = std::min(x_min, pt.x);
-
+            
             for (const auto& pt : cloud_filt->points) {
                 if (pt.x <= x_min + MAX_DISTANCE) {
                     cloud_aux->points.push_back(pt);
                     cloud_final->points.push_back(pt);
                 }
             }
-
+            #elif defined(Z_BASED)
+            float z_max = std::numeric_limits<float>::lowest();
+            for (const auto& pt : cloud_filt->points)
+                z_max = std::max(z_max, pt.z);
+            
+            for (const auto& pt : cloud_filt->points) {
+                if (pt.z >= z_max - MAX_DISTANCE) {
+                    cloud_aux->points.push_back(pt);
+                    cloud_final->points.push_back(pt);
+                }
+            }
+            #endif
             if (!cloud_aux->points.empty()) {
                 cone = clusterize(cloud_aux, inf.class_name);
                 if (cone.color != fs_msgs::msg::Cone::UNKNOWN) {
