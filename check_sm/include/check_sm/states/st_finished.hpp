@@ -9,30 +9,29 @@
 
 namespace check_sm
 {
-struct st_finished;
+struct st_off;
 
-struct st_checking : smacc2::SmaccState<st_checking, CheckSm>
+struct st_finished : smacc2::SmaccState<st_finished, CheckSm>
 {
     using SmaccState::SmaccState;
 
-    // CORREÇÃO: As reações ficam AQUI, fora da função!
-    typedef smacc2::Transition<check_sm::EvCanTrigger, check_sm::st_finished
+    typedef smacc2::Transition<check_sm::EvResetTrigger, check_sm::st_off
     > reactions;
 
     static void staticConfigure()
     {
         // 1. Envia o sinal Activate para o serviço /.../change_state
         configure_orthogonal<or_check, CbChangeLifecycle>(
-            lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE
+            lifecycle_msgs::msg::Transition::TRANSITION_ACTIVE_SHUTDOWN
         );
 
         // 2. Inicia o timer
         configure_orthogonal<or_check, cl_ros_timer::CbTimer>();
     }
-    
-    void onEntry()
+
+    void onExit()
     {
-        RCLCPP_INFO(getLogger(), "Estado checking: Verificando o sistema...");
+        RCLCPP_INFO(getLogger(), "Estado finished: Finalizando verificações...");
     }
 };
 } // namespace check_sm

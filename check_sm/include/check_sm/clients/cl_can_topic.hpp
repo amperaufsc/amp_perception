@@ -14,7 +14,7 @@ class ClCanTopic : public smacc2::client_bases::SmaccSubscriberClient<std_msgs::
 public:
     // Atualizado para o novo nome
     ClCanTopic() 
-        : smacc2::client_bases::SmaccSubscriberClient<std_msgs::msg::String>("/can_msg")
+        : smacc2::client_bases::SmaccSubscriberClient<std_msgs::msg::String>("/check_sm/can_msg")
     {
     }
 

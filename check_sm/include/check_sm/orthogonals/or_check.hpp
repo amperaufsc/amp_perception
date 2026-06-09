@@ -26,9 +26,6 @@ public:
             rclcpp::Duration(std::chrono::seconds(15))
         );
 
-        // 3. Cliente do Teclado
-        this->createClient<cl_keyboard::ClKeyboard>();
-
         // 4. Cliente da CAN
         this->createClient<check_sm::ClCanTopic>();
     }

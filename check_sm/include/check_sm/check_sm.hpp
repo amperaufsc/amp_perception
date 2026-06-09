@@ -5,7 +5,9 @@
 namespace check_sm
 {
     struct st_off;
+    struct st_seup;
     struct st_checking;
+    struct st_finished;
 }
 
 #include "orthogonals/or_check.hpp"
@@ -28,4 +30,6 @@ struct CheckSm : public smacc2::SmaccStateMachineBase<CheckSm, st_off>
 } // namespace check_sm
 
 #include "states/st_off.hpp"
+#include "states/st_setup.hpp"
 #include "states/st_checking.hpp"
+#include "states/st_finished.hpp"

@@ -9,7 +9,7 @@
 
 namespace check_sm
 {
-struct st_checking;
+struct st_setup;
 
 struct st_off : smacc2::SmaccState<st_off, CheckSm>
 {
@@ -17,23 +17,17 @@ struct st_off : smacc2::SmaccState<st_off, CheckSm>
 
     // CORREÇÃO: As reações ficam AQUI, no corpo da struct!
     typedef boost::mpl::list<
-        smacc2::Transition<check_sm::EvCanTrigger, check_sm::st_checking>,
-        
-        // CORREÇÃO: O primeiro parâmetro deve ser o Cliente (ClKeyboard)
-        smacc2::Transition<
-            cl_keyboard::EvKeyPressE<cl_keyboard::ClKeyboard, or_check>, 
-            check_sm::st_checking
-        >
+        smacc2::Transition<check_sm::EvCanTrigger, check_sm::st_setup>
     > reactions;
 
     static void staticConfigure()
     {
-        configure_orthogonal<or_check, cl_keyboard::CbDefaultKeyboardBehavior>();
+        //..
     }
 
     void onEntry()
     {
-        RCLCPP_INFO(getLogger(), "[Check SM] ST_OFF: Aguardando pulso no tópico /can_msg ou tecla 'e'...");
+        RCLCPP_INFO(getLogger(), "Estado off: aguardando pulso no tópico /can_msg...");
     }
 };
 } // namespace check_sm

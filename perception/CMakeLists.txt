@@ -18,6 +18,12 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
+        ros2/lifecycle_dpe.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
         lifecycles/lifecycle_perception.py
         DESTINATION lib/${PROJECT_NAME}
 )
