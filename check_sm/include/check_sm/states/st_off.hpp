@@ -17,7 +17,7 @@ struct st_off : smacc2::SmaccState<st_off, CheckSm>
 
     // CORREÇÃO: As reações ficam AQUI, no corpo da struct!
     typedef boost::mpl::list<
-        smacc2::Transition<check_sm::EvCanTrigger, check_sm::st_setup>
+        smacc2::Transition<check_sm::EvCanTrigger, check_sm::st_setup>  
     > reactions;
 
     static void staticConfigure()

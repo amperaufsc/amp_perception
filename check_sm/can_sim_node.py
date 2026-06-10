@@ -31,7 +31,7 @@ class TecladoCanNode(Node):
 
 # Função para ler uma única tecla do terminal sem precisar dar Enter
 def capturar_tecla(settings):
-    tty.setraw(sys.stdin.fileno())a
+    tty.setraw(sys.stdin.fileno())
     select.select([sys.stdin], [], [], 0)
     key = sys.stdin.read(1)
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)

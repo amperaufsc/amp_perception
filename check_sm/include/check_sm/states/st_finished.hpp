@@ -6,6 +6,7 @@
 #include <ros_timer_client/cl_ros_timer.hpp>
 #include <ros_timer_client/client_behaviors/cb_ros_timer.hpp>
 #include "../client_behavior/cb_change_lifecycle.hpp"
+#include <check_sm/clients/cl_reset_listener.hpp>
 
 namespace check_sm
 {

@@ -19,7 +19,7 @@ public:
         // que você quer ativar (ex: "/yolo_perception_node", "/lidar_driver", etc.)
         this->createClient<
             smacc2::client_bases::SmaccServiceClient<lifecycle_msgs::srv::ChangeState>
-        >("/depthai_position_estimator/change_state");
+        >("/float_publisher/change_state");
 
         // 2. Cliente do Temporizador (15 segundos)
         this->createClient<cl_ros_timer::ClRosTimer>(
