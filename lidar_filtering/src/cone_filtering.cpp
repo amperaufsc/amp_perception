@@ -29,8 +29,8 @@
 
 const float MAX_DISTANCE = 0.1f;
 #define ENABLE_CLUSTERING
-//#define X_BASED
-#define Z_BASED
+#define X_BASED
+//#define Z_BASED
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
