@@ -12,7 +12,7 @@ class TecladoCanNode(Node):
     def __init__(self):
         super().__init__('teclado_can_node')
         # Cria o publisher no exato tópico que a sua State Machine está escutando
-        self.publisher_ = self.create_publisher(String, '/check_sm/can_msg', 10)
+        self.publisher_ = self.create_publisher(String, '/as_amp/check', 10)
         #self.publisher_ = self.create_publisher(String, '/check_sm/reset', 10)
 
         self.get_logger().info('--- Nó de Teste Iniciado ---')
@@ -23,9 +23,9 @@ class TecladoCanNode(Node):
 
     def disparar_mensagem(self):
         msg = String()
-        msg.data = "START"
+        msg.data = "CHECK"
         self.publisher_.publish(msg)
-        self.get_logger().info('🚀 Mensagem "START" enviada no tópico /check_sm/can_msg!')
+        self.get_logger().info('🚀 Mensagem "Check" enviada no tópico /as_amp/!')
         #self.get_logger().info('🚀 Mensagem "RESET" enviada no tópico /check_sm/can_msg!')
 
 

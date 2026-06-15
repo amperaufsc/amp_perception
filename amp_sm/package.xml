@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>check_sm</name>
+  <name>amp_sm</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="otaviopgoulart06@gmail.com">otaviogoulart</maintainer>
@@ -15,7 +15,6 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>lifecycle_msgs</depend>
   <depend>ros_timer_client</depend>
-  <depend>keyboard_client</depend>
   <depend>std_msgs</depend>
   <exec_depend>rclpy</exec_depend>
 
