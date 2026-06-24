@@ -23,11 +23,6 @@ install(
 )
 install(
         PROGRAMS
-        sim_dispmap/disparity_map.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
         sim_dispmap/camera_info.py
         DESTINATION lib/${PROJECT_NAME}
 )
