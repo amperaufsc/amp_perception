@@ -24,7 +24,7 @@ install(
 
 install(
         PROGRAMS
-        lifecycles/lifecycle_perception.py
+        lifecycles/perception_lifecycle_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
