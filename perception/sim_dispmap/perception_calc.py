@@ -1,31 +1,31 @@
 import numpy as np
 from fs_msgs.msg import TrackStampedWithCovariance, Track, ConeWithCovariance
+from ament_index_python.packages import get_package_prefix
 from sensor_msgs.msg import Image
 import os
 import yaml
 import cv2
 from cv_bridge import CvBridge
+from pathlib import Path
+
 bridge = CvBridge()
 
 class PerceptionProcess:
     # perception_calc(endereço_arq_yaml, disp_img).triangulacao(baseline,yoloinference) = ((X,Y,Z)) -> Posicao do cone no espaco 3D.
-    def __init__(self, baseline):
+    def __init__(self, baseline, left_config_file_name, right_config_file_name):
 
-        endereco_matriz_intrinsica_left = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_left_22_04.yaml'
-        endereco_matriz_intrinsica_right = '/home/otaviogoulart/ws/src/amp_perception/perception/config/OAKDLR_right_22_04.yaml'
-        self.camera_matrix = self.yaml_reader(endereco_matriz_intrinsica_left, endereco_matriz_intrinsica_right)
+        pacote_lib = get_package_prefix("perception")
 
-            #OAK D LR
-        self.focal_length_x = self.camera_matrix[0][0][0][0]
-        self.focal_length_y = self.camera_matrix[0][0][1][1]
-        self.center_x = self.camera_matrix[0][0][0][2]
-        self.center_y = self.camera_matrix[0][0][1][2]
+        left_config_path = os.path.join(pacote_lib, 'lib', 'perception', 'config', left_config_file_name)
+        right_config_path = os.path.join(pacote_lib, 'lib', 'perception', 'config', right_config_file_name)
 
-            #OAK D W
-        #self.focal_length_x = 574.92
-        #self.focal_length_y = 574.92
-        #self.center_x = 639.78
-        #self.center_y = 377.21
+        self.left_config_yaml = PerceptionProcess.yaml_reader(left_config_path)
+        self.right_config_yaml = PerceptionProcess.yaml_reader(right_config_path)
+
+        self.focal_length_x = self.left_config_yaml[0][0][0]
+        self.focal_length_y = self.left_config_yaml[0][1][1]
+        self.center_x = self.left_config_yaml[0][0][2]
+        self.center_y = self.left_config_yaml[0][1][2]
 
         self.baseline = baseline
 
@@ -78,18 +78,22 @@ class PerceptionProcess:
             median_disp = np.median(valid)
             
             if len(valid) >= 1:
-                if median_disp > 300:
+                if median_disp > 700:
                     Z = median_disp / 1000
                     X, Y = self.x_y_space_measure(Z, center_x, center_y)
                     is_disp_map = True
+                    cone.location.x = X
+                    cone.location.y = Y
+                    cone.location.z = Z
 
                 else:
                     X,Y,Z = self.triangulacao(center_y, center_x, median_disp, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
                     is_disp_map = False
+                    cone.location.x = X
+                    cone.location.y = Y
+                    cone.location.z = Z
 
-            cone.location.x = X
-            cone.location.y = Y
-            cone.location.z = Z
+
             
             deviationZ = 0.0096*cone.location.z + 0.1643   #linearização do erro da detecção vs distancia no eixo z
             deviationX = 0.0232*cone.location.x + 0.1204   #linearização do erro da detecção vs distancia no eixo x
@@ -139,8 +143,8 @@ class PerceptionProcess:
 
         image_size = (imgL_cv.shape[1], imgL_cv.shape[0])
 
-        [k_left, d_left, r_left, p_left] = self.camera_matrix[0]
-        [k_right, d_right, r_right, p_right] = self.camera_matrix[1]
+        [k_left, d_left, r_left, p_left] = self.left_config_yaml
+        [k_right, d_right, r_right, p_right] = self.right_config_yaml
 
         mapLx, mapLy = cv2.initUndistortRectifyMap(k_left, d_left, r_left, p_left, image_size, cv2.CV_32FC1)
         mapRx, mapRy = cv2.initUndistortRectifyMap(k_right, d_right, r_right, p_right, image_size, cv2.CV_32FC1)
@@ -181,30 +185,18 @@ class PerceptionProcess:
 
         return (disp_map, stereo)
     
-    def yaml_reader(self, endereco_left, endereco_right):
+    @staticmethod
+    def yaml_reader(path):
         try:
-            saida = [None, None]
-            with open(endereco_left, 'r') as file:
+            with open(path, 'r') as file:
                 
                 data = yaml.safe_load(file)
                 kL = np.array(data['camera_matrix']['data'], dtype=np.float64)
                 dL = np.array(data['distortion_coefficients']['data'], dtype=np.float64)
                 rL = np.array(data['rectification_matrix']['data'], dtype=np.float64)
                 pL = np.array(data['projection_matrix']['data'], dtype=np.float64)
-
-                saida[0] = [kL, dL, rL, pL]
-            
-            with open(endereco_right, 'r') as file:
-
-                data = yaml.safe_load(file)
-                kR = np.array(data['camera_matrix']['data'], dtype=np.float64)
-                dR = np.array(data['distortion_coefficients']['data'], dtype=np.float64)
-                rR = np.array(data['rectification_matrix']['data'], dtype=np.float64)
-                pR = np.array(data['projection_matrix']['data'], dtype=np.float64)
-
-                saida[1] = [kR, dR, rR, pR]
-
-            return saida
+                
+                return [kL, dL, rL, pL]
                 
         except FileNotFoundError:
             print("ERRO: Arquivo YAML não encontrado no endereco")

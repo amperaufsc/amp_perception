@@ -29,8 +29,8 @@ class Camera_subscriber(Node):
         self.yolov8_pub = self.create_publisher(Yolov8Inference, "inferenceresult", 1)
         self.img_pub = self.create_publisher(Image, "inferenceimg", 1)
 
-        # self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best.pt')
-        self.declare_parameter('yolov8_path')
+        self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/teste_19_05/best.pt')
+        #self.declare_parameter('yolov8_path')
 
         self.yolov8_path = self.get_parameter('yolov8_path').value
 
