@@ -18,52 +18,42 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
-        sim_dispmap/img_descompress.py
+        utils/track_node_pub_life.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/img_descompress.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/capture_images.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/conecomparisonnode.py
         DESTINATION lib/${PROJECT_NAME}
 )
 install(
         PROGRAMS
-        sim_dispmap/camera_info.py
+        utils/disparity_map_pub.py
         DESTINATION lib/${PROJECT_NAME}
 )
+
 install(
         PROGRAMS
-        sim_dispmap/capture_images.py
+        utils/perception_calc.py
         DESTINATION lib/${PROJECT_NAME}
 )
+
 install(
         PROGRAMS
-        sim_dispmap/conecomparisononetrack.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/conecomparisonnode.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/disparity_map_pub.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/disp_map_show.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/perception_calc.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/cone_track_node_luxonis.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-install(
-        PROGRAMS
-        sim_dispmap/cone_track_node.py
+        utils/cone_track_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -93,7 +83,13 @@ install(
 
 install(
         DIRECTORY
-        sim_dispmap
+        config
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        DIRECTORY
+        utils
         DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -12,7 +12,7 @@ import rclpy.time
 from sensor_msgs.msg import Image, CameraInfo
 from cv_bridge import CvBridge
 from message_filters import Subscriber, ApproximateTimeSynchronizer
-from perception_calc import PerceptionProcess
+from amp_perception.perception.utils.perception_calc import PerceptionProcess
 import yaml
 import time
 import threading
