@@ -134,7 +134,7 @@ class Cone_Track_Process(LifecycleNode):
                 cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
                 #self.get_logger().info(cone_location %(x,y,z))
 
-        self.Track_Stamped_Base_Pub.publish(track)
+        self.Track_Stamped_Base_Pub.publish(self.Track_Stamped_With_Covariance_Msg_Pub(track, imgL_raw_ros_msg.header))
 
         end_time = time.time()
 

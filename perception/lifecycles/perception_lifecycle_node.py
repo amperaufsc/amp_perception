@@ -26,17 +26,17 @@ class Lifecycle_Perception(LifecycleNode):
             self.get_logger().info("Configuring Perception")
             
             ## Cria os subscribers
-            self.img_l_msg = Subscriber(self, Image, "/oak/left/image_raw")
-            self.img_R_msg = Subscriber(self, Image, "/oak/right/image_raw")
-            self.disparity_msg = Subscriber(self, Image, "/oak/stereo/image_raw")
-            self.inference = Subscriber(self, Yolov8Inference, "/yolov8/inferenceresult")
+            self.img_l_msg = Subscriber(self, Image, "camera/left")
+            self.img_R_msg = Subscriber(self, Image, "camera/right")
+            self.disparity_msg = Subscriber(self, Image, "disparity")
+            self.inference = Subscriber(self, Yolov8Inference, "inferenceresult")
 
             # Cria os lifecycle publishers
             self.track = self.create_lifecycle_publisher(TrackStampedWithCovariance, "track", 10)
 
             # Declara todos os parâmetros utilizados.
-            self.declare_parameter("left_camera_info", "src/amp_perception/perception/config/OAKDLR_left.yaml")
-            self.declare_parameter("right_camera_info", "src/amp_perception/perception/config/OAKDLR_right.yaml")
+            self.declare_parameter("left_camera_info", "/src/amp_perception/perception/config/OAKDLR_left.yaml")
+            self.declare_parameter("right_camera_info", "/src/amp_perception/perception/config/OAKDLR_right.yaml")
             self.declare_parameter("set_disparity", True)
 
             # Pega os parâmetros
@@ -87,9 +87,21 @@ class Lifecycle_Perception(LifecycleNode):
         
     def on_shutdown(self, state: State) -> TransitionCallbackReturn:
         try:    
-            self.get_logger().info("Exiting node with safety")
+            self.get_logger().info("Encerrando o nó de percepção com segurança...")
             
-            # TODO: Garantir que portas seriais ou conexões de rede sejam fechadas    
+            # O on_shutdown pode ser chamado de qualquer estado (inclusive se o nó estiver ativo).
+            # Por segurança, garantimos que o publicador seja destruído se ainda existir.
+            if hasattr(self, 'track') and self.track is not None:
+                self.destroy_publisher(self.track)
+            
+            # Limpa referências remanescentes na memória
+            self.img_l_msg = None
+            self.img_R_msg = None
+            self.disparity_msg = None
+            self.inference = None
+            self.time_sync = None
+            self.perception_methods = None
+                
             return TransitionCallbackReturn.SUCCESS
         
         except Exception as e:
@@ -117,6 +129,32 @@ class Lifecycle_Perception(LifecycleNode):
 
         except Exception as e:
             self.get_logger().warn(f"Shutdown failed: {e}")
+            return TransitionCallbackReturn.ERROR
+        
+    def on_cleanup(self, state: State) -> TransitionCallbackReturn:
+        try:
+            self.get_logger().info("Limpando recursos (Unconfiguring)...")
+            
+            # 1. Destrói explicitamente o publicador lifecycle para liberar a rede do ROS
+            if hasattr(self, 'track') and self.track is not None:
+                self.destroy_publisher(self.track)
+                self.track = None
+
+            # 2. Desvincula os assinantes do message_filters 
+            # (O garbage collector do Python finaliza a destruição)
+            self.img_l_msg = None
+            self.img_R_msg = None
+            self.disparity_msg = None
+            self.inference = None
+
+            # 3. Limpa instâncias de processamento e sincronizador
+            self.time_sync = None
+            self.perception_methods = None
+
+            return TransitionCallbackReturn.SUCCESS
+            
+        except Exception as e:
+            self.get_logger().warn(f"Cleanup failed: {e}")
             return TransitionCallbackReturn.ERROR
 
 def main(args=None):
