@@ -42,6 +42,7 @@ install(
 
 install(
   PROGRAMS
+  scripts/yolov8_node_lifecycle.py
   scripts/yolov8_ros2_pt.py
   scripts/yolov8_ros2_subscriber.py
   launch/launch_yolov8.launch.py
