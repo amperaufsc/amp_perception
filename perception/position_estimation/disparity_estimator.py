@@ -3,21 +3,18 @@ from fs_msgs.msg import TrackStampedWithCovariance, Track
 from fs_msgs.msg import ConeWithCovariance, Cone
 import numpy as np
 import rclpy
-from cv_bridge import CvBridge
 
 class DisparityEstimator:
     def __init__(self,intrinsics, set_disparity):
         self.intrinsic_matrix=intrinsics['camera_matrix']['data']
         self.set_disparity = set_disparity
 
-        self.bridge = CvBridge()
-
     def get_object_on_map(self,left_img,disp_map,yolo,baseline,focal_length):
         cone_list=[]
 
         self.bb_on_left=yolo
-        self.left_img= self.bridge.imgmsg_to_cv2(left_img)
-        self.disp_map=self.bridge.imgmsg_to_cv2(disp_map)
+        self.left_img=left_img
+        self.disp_map=disp_map
         
         track=TrackStampedWithCovariance()
         
@@ -97,7 +94,7 @@ class DisparityEstimator:
         
         return X,Y,Z
     
-    def Track_Stamped_With_Covariance_Msg_Compose(self, cone_track, header):
+    def track_stamped_with_covariance_msg_compose(self, cone_track, header):
 
         track_stamped = TrackStampedWithCovariance()
         track_stamped.header = header

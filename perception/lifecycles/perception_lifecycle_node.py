@@ -3,15 +3,18 @@ import rclpy
 from rclpy.lifecycle import LifecycleNode, Node, State, TransitionCallbackReturn
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from sensor_msgs.msg import Image, CameraInfo
-from yolov8_msgs.msg import InferenceResult
+from yolov8_msgs.msg import Yolov8Inference
 from stereo_msgs.msg import DisparityImage
 from fs_msgs.msg import Track, TrackStampedWithCovariance, Cone, ConeWithCovariance
 from std_msgs.msg import String
 from lifecycle_msgs.msg import Transition, TransitionEvent
+from cv_bridge import CvBridge
 import sys
 import yaml
 
 from position_estimation.disparity_estimator import DisparityEstimator
+
+bridge = CvBridge()
 
 class Lifecycle_Perception(LifecycleNode):
     def __init__(self):
@@ -26,10 +29,10 @@ class Lifecycle_Perception(LifecycleNode):
             self.img_l_msg = Subscriber(self, Image, "/oak/left/image_raw")
             self.img_R_msg = Subscriber(self, Image, "/oak/right/image_raw")
             self.disparity_msg = Subscriber(self, Image, "/oak/stereo/image_raw")
-            self.inference = Subscriber(self, InferenceResult, "inference")
+            self.inference = Subscriber(self, Yolov8Inference, "/yolov8/inferenceresult")
 
             # Cria os lifecycle publishers
-            self.track = self.create_lifecycle_publisher(Track, "track", 10)
+            self.track = self.create_lifecycle_publisher(TrackStampedWithCovariance, "track", 10)
 
             # Declara todos os parâmetros utilizados.
             self.declare_parameter("left_camera_info", "src/amp_perception/perception/config/OAKDLR_left.yaml")
@@ -67,13 +70,14 @@ class Lifecycle_Perception(LifecycleNode):
             queue_size = 10
             max_delay = 1
             self.time_sync = ApproximateTimeSynchronizer([self.img_l_msg, 
-                                                         self.img_R_msg, 
-                                                         self.disparity_msg, 
+                                                         self.img_R_msg,
+                                                         self.disparity_msg,
                                                          self.inference], 
                                                          queue_size, max_delay)
             
             # Registra o callback
             self.time_sync.registerCallback(self.callback)  
+            self.get_logger().warn("Perception activated and ready to process data")
             
             return TransitionCallbackReturn.SUCCESS
         
@@ -93,16 +97,20 @@ class Lifecycle_Perception(LifecycleNode):
             return TransitionCallbackReturn.ERROR
 
     def callback(self, img_left_msg, img_right_msg, disparity, inference):
+        self.get_logger().info("Callback called with synchronized messages")
         try:
             # Parametros
             focal_length = 453.6716
             baseline = 0.15
 
+            cv2disp_map = bridge.imgmsg_to_cv2(disparity)
+            cv2img_left = bridge.imgmsg_to_cv2(img_left_msg)
+
             # Cria a track
-            track = self.perception_methods.get_object_on_map(img_left_msg, disparity, inference, baseline, focal_length)
+            track = self.perception_methods.get_object_on_map(cv2img_left, cv2disp_map, inference.yolov8_inference, baseline, focal_length)
 
             # Compoe a mensagem de track
-            track = self.perception_methods.Track_Stamped_With_Covariance_Msg_Compose(track, self.img_l_msg.header)
+            track = self.perception_methods.track_stamped_with_covariance_msg_compose(track, img_left_msg.header)
 
             # Publica a track
             self.track.publish(track)
