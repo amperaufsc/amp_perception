@@ -9,8 +9,8 @@ def generate_launch_description():
     yolov8_path = 'src/amp_perception/yolobot_recognition/scripts/best.pt'
 
     return LaunchDescription([
-        LaunchArg('namespace', default_value=['yolov8'], description='Namespace for node'),
-        LaunchArg('image',default_value=['image'],description='img topic'),
+        LaunchArg('namespace', default_value=['namespace'], description='Namespace for node'),
+        LaunchArg('image',default_value=['/oak/left/image_raw'],description='img topic'),
         LaunchArg('inferenceresult',default_value=['inferenceresult'],description='bounding box coordenates on image'),
         LaunchArg('inferenceimg',default_value=['inferenceimg'],description='img with boundingbox'),
         Node(
@@ -20,7 +20,7 @@ def generate_launch_description():
             namespace=LaunchConfiguration('namespace'),
             output='screen',
             remappings=[
-                ('image',LaunchConfiguration('image')),
+                ('image',LaunchConfiguration('image')), 
                 ('inferenceresult',LaunchConfiguration('inferenceresult')),
                 ('inferenceimg',LaunchConfiguration('inferenceimg'))
                 ],

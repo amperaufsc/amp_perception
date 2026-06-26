@@ -18,13 +18,54 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
-        ros2/lifecycle_dpe.py
+        lifecycles/disparity_pub_life.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        lifecycles/track_node_pub_life.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
         PROGRAMS
         lifecycles/perception_lifecycle_node.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/img_descompress.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/capture_images.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/conecomparisonnode.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(
+        PROGRAMS
+        utils/disparity_map_pub.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/perception_calc.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        utils/cone_track_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -49,6 +90,24 @@ install(
 install(
         PROGRAMS
         ros2/camera_info_pub.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        ros2/lifecycle_dpe.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        DIRECTORY
+        config
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        DIRECTORY
+        utils
         DESTINATION lib/${PROJECT_NAME}
 )
 
