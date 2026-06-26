@@ -14,7 +14,7 @@ from std_msgs.msg import Header
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from fs_msgs.msg import TrackStampedWithCovariance, TrackStamped
 from yolov8_msgs.msg import Yolov8Inference
-from amp_perception.perception.utils.perception_calc import PerceptionProcess
+from utils.perception_calc import PerceptionProcess
 
 bridge = CvBridge()
 

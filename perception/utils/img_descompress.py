@@ -14,8 +14,8 @@ class StereoDecompressorNode(Node):
         # =====================================================================
         # PUBLISHERS: Tópicos Raw de saída (Já em tons de cinza / mono8)
         # =====================================================================
-        self.pub_left = self.create_publisher(Image, '/oak/left/image', 10)
-        self.pub_right = self.create_publisher(Image, '/oak/right/image', 10)
+        self.pub_left = self.create_publisher(Image, 'camera/left', 10)
+        self.pub_right = self.create_publisher(Image, 'camera/right', 10)
 
         # =====================================================================
         # SUBSCRIBERS: Tópicos de entrada comprimida
@@ -24,13 +24,13 @@ class StereoDecompressorNode(Node):
         # Descomprimimos assim que o pacote chega. O nó do SGBM sincroniza depois.
         self.sub_left = self.create_subscription(
             CompressedImage,
-            '/oak/left/image_raw/compressed',
+            '/camera/left/compressed',
             self.left_callback,
             qos_profile_sensor_data)
 
         self.sub_right = self.create_subscription(
             CompressedImage,
-            '/oak/right/image_raw/compressed',
+            '/camera/right/compressed',
             self.right_callback,
             qos_profile_sensor_data)
 

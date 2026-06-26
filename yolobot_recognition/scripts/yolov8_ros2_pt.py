@@ -21,7 +21,7 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            'image',
+            '/oak/left/image_raw',
             self.camera_callback,  
             10)
         self.subscription 

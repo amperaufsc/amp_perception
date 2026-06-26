@@ -11,7 +11,7 @@ from cv_bridge import CvBridge
 from std_msgs.msg import Header
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from fs_msgs.msg import TrackStampedWithCovariance
-from perception_calc import PerceptionProcess
+from utils.perception_calc import PerceptionProcess
 from yolov8_msgs.msg import Yolov8Inference
 import cv2
 import time
@@ -42,7 +42,7 @@ class Cone_Track_Process(LifecycleNode):
         try:
             self.get_logger().info("Configurando o nó de percepção...")
 
-            # 2. LEITURA DOS VALORES (Pega o que veio do launch file, ou usa o padrão)
+            # 2. LEITURA DOS VALORES 
             left_config_file_name = self.get_parameter("left_config_file_name").value
             right_config_file_name = self.get_parameter("right_config_file_name").value
             baseline = self.get_parameter("baseline").value
@@ -50,13 +50,13 @@ class Cone_Track_Process(LifecycleNode):
             # Instancia o processo com os parâmetros capturados
             self.calc = PerceptionProcess(baseline, left_config_file_name, right_config_file_name)
                          
-            # Aplicando QoS de sensor para garantir que mensagens pesadas cheguem sem travar a rede
-            self.image_left_sub = Subscriber(self, Image, "/oak/left/image_raw", qos_profile=qos_profile_sensor_data)
-            self.image_right_sub = Subscriber(self, Image, "/oak/right/image_raw", qos_profile=qos_profile_sensor_data)
-            self.base_disp_map = Subscriber(self, Image, "/oak/stereo/image_raw", qos_profile=qos_profile_sensor_data)
+            # 3. SUBSCRIBERS USANDO OS PARÂMETROS DE TÓPICOS
+            self.image_left_sub = Subscriber(self, Image, "camera/left", qos_profile=qos_profile_sensor_data)
+            self.image_right_sub = Subscriber(self, Image, "camera/right", qos_profile=qos_profile_sensor_data)
+            self.base_disp_map = Subscriber(self, Image, "disparity", qos_profile=qos_profile_sensor_data)
             self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "inferenceresult")
 
-            # ATENÇÃO: Mudança para create_lifecycle_publisher
+            # 4. PUBLISHER USANDO O PARÂMETRO
             self.Track_Stamped_Base_Pub = self.create_lifecycle_publisher(TrackStampedWithCovariance, "track", 10)
             
             # Sincronizador nasce junto com os tópicos no on_configure
