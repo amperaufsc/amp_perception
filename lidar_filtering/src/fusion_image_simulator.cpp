@@ -18,6 +18,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <functional> // sei nao
 #include <stdio.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
@@ -26,8 +27,8 @@ typedef sync_policies::ApproximateTime<
 class PointCloudHandler : public rclcpp::Node {
 public:
   PointCloudHandler() : rclcpp::Node("pcl_transform_from_yaml")
-  , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
-  , sub_image{this, "/oak/left/image_raw", rmw_qos_profile_sensor_data} 
+  , sub_pointcloud{this, "/fsds/lidar/Lidar2", rmw_qos_profile_sensor_data}
+  , sub_image{this, "/fsds/cam2/image_color", rmw_qos_profile_sensor_data} 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
       MySyncPolicy(100), sub_pointcloud, sub_image);
@@ -39,9 +40,9 @@ public:
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_image = this->create_publisher<sensor_msgs::msg::Image>("image_lidar", 10);
 
-    std::string path_intrinsic = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_intrinsic.yaml";  // substitua pelo caminho real
+    std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/intrinsic_simulator.yaml";
     YAML::Node config_intrinsic = YAML::LoadFile(path_intrinsic);
-    std::string path_extrinsinc = "/home/lucasmoro/ws/src/amp_perception/lidar_filtering/config/matrix_extrinsic.yaml"; 
+    std::string path_extrinsinc = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/extrinsic_simulator.yaml";
     YAML::Node config_extrinsic = YAML::LoadFile(path_extrinsinc);
 
     auto rot_data = config_extrinsic["rotation_matrix"]["data"].as<std::vector<float>>();
@@ -73,7 +74,7 @@ public:
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  1, 0,
+        0,  0,  -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 
@@ -99,20 +100,16 @@ private:
 
       cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
       
-      RCLCPP_INFO(this->get_logger(), "Imagem: %f x %f", static_cast<float>(image_msg->width), static_cast<float>(image_msg->height));
       for (const auto& pt : cloud_in->points) {
         // if (pt.x >= 0 && pt.z >= 0){ // isso eh pra filtrar se o ponto eh da frente do carro pra n ter chance de colocar no plano um ponto que estava la atras
         Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f); // ponto em coordenadas homogêneas
         Eigen::Vector3f Y = camera_matrix * X;     // aplica P * R_rect * RT
 
-        // SE O LIDAR FOR VELODYNE DEVE SER '<='
-        // SE FOR OUSTER DEVE SER '=>'
         if (Y(2) <= 0) continue;
         float u = Y(0) / Y(2);
         float v = Y(1) / Y(2);
       
-        std::cout<< "u = " << u << std::endl;
-        std::cout<< "v = " << v << std::endl;
+        RCLCPP_INFO(this->get_logger(), "u = %f  v = %f", u, v);
 
         if (u >= 0 && u <= static_cast<float>((image_msg->width)) && 
              v >= 0 && v < static_cast<float>(image_msg->height)) {

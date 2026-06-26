@@ -24,6 +24,12 @@ install(
 
 install(
         PROGRAMS
+        ros2/lifecycle_dpe.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
         utils/img_descompress.py
         DESTINATION lib/${PROJECT_NAME}
 )
@@ -48,6 +54,12 @@ install(
 install(
         PROGRAMS
         utils/perception_calc.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        lifecycles/perception_lifecycle_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 

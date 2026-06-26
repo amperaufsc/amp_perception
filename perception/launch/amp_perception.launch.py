@@ -43,7 +43,7 @@ def generate_launch_description():
                 ('disparity', LaunchConfiguration('disparity')),
                 ('inference', LaunchConfiguration('inference')),
                 ('camera/left', LaunchConfiguration('camera/left')),
-                ('camera/right', LaunchConfiguration('camera/left')), 
+                ('camera/right', LaunchConfiguration('camera/right')), 
                 ('track', LaunchConfiguration('track')),
                 ('pointcloud',LaunchConfiguration('pointcloud'))
             ]

@@ -5,8 +5,8 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
 
-    confidence = 0.55
-    yolov8_path = "src/amp_perception/yolobot_recognition/scripts/teste_19_05/best.pt"
+    confidence = 0.7
+    yolov8_path = 'src/amp_perception/yolobot_recognition/scripts/best.pt'
 
     return LaunchDescription([
         LaunchArg('namespace', default_value=['namespace'], description='Namespace for node'),

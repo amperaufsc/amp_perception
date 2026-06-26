@@ -40,6 +40,7 @@ using namespace message_filters;
 // cria um apelido menor pro tipo (MySyncPolicy)
 typedef sync_policies::ApproximateTime<
     sensor_msgs::msg::PointCloud2,
+    sensor_msgs::msg::Image,
     yolov8_msgs::msg::Yolov8Inference> MySyncPolicy; 
 
 
@@ -50,18 +51,21 @@ public:
   PointCloudHandler() : rclcpp::Node("lidar_fusion")
   , sub_pointcloud{this, "/velodyne_points", rmw_qos_profile_sensor_data}
   , sub_inference{this, "/Yolov8_Inference", rmw_qos_profile_sensor_data} 
+  , sub_image{this, "/oak/left/image_raw", rmw_qos_profile_sensor_data} 
 
   {
     sync_ = std::make_shared<Synchronizer<MySyncPolicy>>(
-      MySyncPolicy(1000), sub_pointcloud, sub_inference);
+      MySyncPolicy(1000), sub_pointcloud, sub_image, sub_inference);
     sync_->registerCallback(
       std::bind(&PointCloudHandler::cloud_callback,
                 this,
                 std::placeholders::_1,
-                std::placeholders::_2));
+                std::placeholders::_2,
+                std::placeholders::_3));
     
     pub_pointcloud = this->create_publisher<sensor_msgs::msg::PointCloud2>("lidar_pub", 10);
     pub_track = this->create_publisher<fs_msgs::msg::TrackStamped>("track_lidar", 10);
+    pub_image = this->create_publisher<sensor_msgs::msg::Image>("image_lidar", 10);
 
     // Carrega os yaml's
     std::string path_intrinsic = ament_index_cpp::get_package_share_directory("lidar_filtering") + "/config/matrix_intrinsic.yaml";
@@ -114,8 +118,9 @@ public:
 
 private:
     // Callback principal. Recebe uma pointcloud crua do LiDAR e uma inferencia
-    void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
-                      , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
+    void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg,
+                        const std::shared_ptr<const sensor_msgs::msg::Image> image_msg,
+                        const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg) {
 
       // Transforma a mensagem ROS2 da pointcloud em uma pointcloud da biblioteca pcl
       // permitindo quaisquer manipulações na pointcloud                  
@@ -128,6 +133,10 @@ private:
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
       fs_msgs::msg::TrackStamped track_final;
+
+      // --- IMAGEM: base para pintar ---
+      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");
+      cv::Mat img = cv_ptr->image; 
 
       for (const auto& inf : inference_msg->yolov8_inference) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
@@ -159,7 +168,24 @@ private:
                 }
             }
         }
+
+        // --- evita usar highest_point não inicializado ---
+        if (first) continue;
+
         cloud_final->points.push_back(highest_point);
+
+        {
+          Eigen::Vector4f X(highest_point.x, highest_point.y, highest_point.z, 1.0f);
+          Eigen::Vector3f Y = camera_matrix * X;
+          if (Y(2) > 0) {
+            float u = Y(0) / Y(2);
+            float v = Y(1) / Y(2);
+            if (u >= 0.0f && u < static_cast<float>(image_msg->width) &&
+                v >= 0.0f && v < static_cast<float>(image_msg->height)) {
+              cv::circle(img, cv::Point(static_cast<int>(u), static_cast<int>(v)), 1, cv::Scalar(255, 0, 0), -1);
+            }
+          }
+        }
 
         // Cria um cone, que recebe o retorno da função que clusteriza o maior ponto da boundingbox
         // detectada. Ou seja, o maior ponto detectadp sera usado de referencia para criar a track
@@ -167,7 +193,6 @@ private:
         fs_msgs::msg::Cone cone = clusterize(highest_point, inf.class_name);
         
         if (cone.color != fs_msgs::msg::Cone::UNKNOWN){
-
 
           //MUDA A TRACK PRO FRAME DA CAMERA EM VEZ DO LIDAR  
           Eigen::Vector4f p_l(cone.location.x, cone.location.y, cone.location.z, 1.0f);
@@ -177,23 +202,30 @@ private:
           cone.location.y = p_c(1);
           cone.location.z = p_c(2);
 
-
           track_final.track.push_back(cone);
         }
       }
 
-    cloud_final->width  = static_cast<uint32_t>(cloud_final->points.size());
-    cloud_final->height = 1;
-    RCLCPP_INFO(this->get_logger(), "PointCloud recebida com %zu pontos", cloud_final->points.size());
+      cloud_final->width  = static_cast<uint32_t>(cloud_final->points.size());
+      cloud_final->height = 1;
+      RCLCPP_INFO(this->get_logger(), "PointCloud recebida com %zu pontos", cloud_final->points.size());
 
-    // CONVERSAO PCL PARA ROS2 POINTCLOUD
-    sensor_msgs::msg::PointCloud2 out_msg;
-    pcl::toROSMsg(*cloud_final, out_msg);
-    out_msg.header = pointcloud_msg->header;
-    pub_pointcloud->publish(out_msg);
+      // CONVERSAO PCL PARA ROS2 POINTCLOUD
+      sensor_msgs::msg::PointCloud2 out_msg;
+      pcl::toROSMsg(*cloud_final, out_msg);
+      out_msg.header = pointcloud_msg->header;
+      pub_pointcloud->publish(out_msg);
 
-    pub_track->publish(track_final);
-    
+      pub_track->publish(track_final);
+
+      // publica a imagem pintada
+      {
+        cv_bridge::CvImage out;
+        out.header = image_msg->header;
+        out.encoding = "bgr8";
+        out.image = img;
+        pub_image->publish(*out.toImageMsg());
+      }
   }
 
   // Essa função recebe um ponto da pointcloud, o mais alto ponto da boundingbox 
@@ -223,11 +255,13 @@ private:
   
   message_filters::Subscriber<sensor_msgs::msg::PointCloud2> sub_pointcloud;
   message_filters::Subscriber<yolov8_msgs::msg::Yolov8Inference> sub_inference;
-  
+  message_filters::Subscriber<sensor_msgs::msg::Image> sub_image;
+
   std::shared_ptr<Synchronizer<MySyncPolicy>> sync_;
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_pointcloud;
   rclcpp::Publisher<fs_msgs::msg::TrackStamped>::SharedPtr pub_track;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_image;
 };
 
 int main(int argc, char** argv) {

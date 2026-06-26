@@ -1,7 +1,8 @@
-image_width: 640
-image_height: 640
+# Luxonis OAK D LR right camera config file
+image_width: 768
+image_height: 480
 camera_name: right
-distortion_model: plumb_bob
+
 camera_matrix:
   rows: 3
   cols: 3
