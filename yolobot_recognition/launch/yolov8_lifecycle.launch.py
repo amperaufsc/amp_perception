@@ -19,7 +19,7 @@ def generate_launch_description():
 )
 
     return LaunchDescription([
-        LaunchArg('namespace', default_value=['namespace'], description='Namespace for node'),
+        LaunchArg('namespace', default_value=['yolo'], description='Namespace for node'),
         LaunchArg('image',default_value=['/oak/left/image_raw'],description='img topic'),
         LaunchArg('inference',default_value=['inference'],description='bounding box coordenates on image'),
         LaunchArg('inferenceimg',default_value=['inferenceimg'],description='img with boundingbox'),
