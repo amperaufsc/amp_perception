@@ -60,7 +60,6 @@ class Disparity_Publisher(LifecycleNode):
             self.time_sync = ApproximateTimeSynchronizer([self.img_left, self.img_right], 10, max_delay)
             self.time_sync.registerCallback(self.sync_callback)
             
-            self.get_logger().info(f"Ouvindo: {left_topic} e {right_topic}. Publicando em: {disparity_topic}")
             self.get_logger().info("Configuração finalizada com sucesso.")
             return TransitionCallbackReturn.SUCCESS
 

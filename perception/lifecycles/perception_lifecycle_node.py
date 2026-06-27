@@ -29,7 +29,7 @@ class Lifecycle_Perception(LifecycleNode):
             self.img_l_msg = Subscriber(self, Image, "camera/left")
             self.img_R_msg = Subscriber(self, Image, "camera/right")
             self.disparity_msg = Subscriber(self, Image, "disparity")
-            self.inference = Subscriber(self, Yolov8Inference, "inferenceresult")
+            self.inference = Subscriber(self, Yolov8Inference, "inference")
 
             # Cria os lifecycle publishers
             self.track = self.create_lifecycle_publisher(TrackStampedWithCovariance, "track", 10)

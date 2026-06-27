@@ -39,7 +39,7 @@ class LifecycleCameraSubscriber(LifecycleNode):
 
             self.model = YOLO(self.yolov8_path)
 
-            self.yolov8_pub = self.create_lifecycle_publisher(Yolov8Inference, "inferenceresult", 1)
+            self.yolov8_pub = self.create_lifecycle_publisher(Yolov8Inference, "inference", 1)
             self.img_pub = self.create_lifecycle_publisher(Image, "inferenceimg", 1)
 
             self.subscription = self.create_subscription(

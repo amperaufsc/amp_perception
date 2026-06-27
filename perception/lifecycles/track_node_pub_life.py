@@ -21,7 +21,7 @@ bridge = CvBridge()
 class Cone_Track_Process(LifecycleNode):
 
     def __init__(self):
-        super().__init__('track_node_publisher')
+        super().__init__('track_node_pub_life')
         self.get_logger().info("Nó Lifecycle inicializado (Estado: Unconfigured)")
         
         # Variáveis de estado e métricas
@@ -34,8 +34,8 @@ class Cone_Track_Process(LifecycleNode):
         self.time_sync = None
 
         # 1. DECLARAÇÃO DOS PARÂMETROS COM OS VALORES PADRÃO
-        self.declare_parameter("left_config_file_name", "OAKDLR_left_22_04.yaml")
-        self.declare_parameter("right_config_file_name", "OAKDLR_right_22_04.yaml")
+        self.declare_parameter("left_camera_info", "OAKDLR_left_22_04.yaml")
+        self.declare_parameter("right_camera_info", "OAKDLR_right_22_04.yaml")
         self.declare_parameter("baseline", 0.15)
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
@@ -43,8 +43,8 @@ class Cone_Track_Process(LifecycleNode):
             self.get_logger().info("Configurando o nó de percepção...")
 
             # 2. LEITURA DOS VALORES 
-            left_config_file_name = self.get_parameter("left_config_file_name").value
-            right_config_file_name = self.get_parameter("right_config_file_name").value
+            left_config_file_name = self.get_parameter("left_camera_info").value
+            right_config_file_name = self.get_parameter("right_camera_info").value
             baseline = self.get_parameter("baseline").value
 
             # Instancia o processo com os parâmetros capturados
@@ -54,7 +54,7 @@ class Cone_Track_Process(LifecycleNode):
             self.image_left_sub = Subscriber(self, Image, "camera/left", qos_profile=qos_profile_sensor_data)
             self.image_right_sub = Subscriber(self, Image, "camera/right", qos_profile=qos_profile_sensor_data)
             self.base_disp_map = Subscriber(self, Image, "disparity", qos_profile=qos_profile_sensor_data)
-            self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "inferenceresult")
+            self.yolo_inf_sub = Subscriber(self, Yolov8Inference, "inference")
 
             # 4. PUBLISHER USANDO O PARÂMETRO
             self.Track_Stamped_Base_Pub = self.create_lifecycle_publisher(TrackStampedWithCovariance, "track", 10)

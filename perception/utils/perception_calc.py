@@ -12,12 +12,7 @@ bridge = CvBridge()
 
 class PerceptionProcess:
     # perception_calc(endereço_arq_yaml, disp_img).triangulacao(baseline,yoloinference) = ((X,Y,Z)) -> Posicao do cone no espaco 3D.
-    def __init__(self, baseline, left_config_file_name, right_config_file_name):
-
-        pacote_lib = get_package_prefix("perception")
-
-        left_config_path = os.path.join(pacote_lib, 'lib', 'perception', 'config', left_config_file_name)
-        right_config_path = os.path.join(pacote_lib, 'lib', 'perception', 'config', right_config_file_name)
+    def __init__(self, baseline, left_config_path, right_config_path):
 
         self.left_config_yaml = PerceptionProcess.yaml_reader(left_config_path)
         self.right_config_yaml = PerceptionProcess.yaml_reader(right_config_path)
