@@ -26,11 +26,11 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        LaunchArg('namespace',default_value=['namespace'],description='namespace for Node'),
-        LaunchArg('disparity',default_value=['disparity'],description='disparity img topic'),
-        LaunchArg('inference',default_value=['inference'],description='yolo inference topic'),
-        LaunchArg('camera/left',default_value=['camera/left'],description='camera left topic'),
-        LaunchArg('camera/right',default_value=['camera/right'],description='camera right topic'),
+        LaunchArg('namespace',default_value=['perception'],description='namespace for Node'),
+        LaunchArg('disparity',default_value=['/oak/stereo/image_raw'],description='disparity img topic'),
+        LaunchArg('inference',default_value=['/yolo/inference'],description='yolo inference topic'),
+        LaunchArg('camera/left',default_value=['/oak/left/image_raw'],description='camera left topic'),
+        LaunchArg('camera/right',default_value=['/oak/right/image_raw'],description='camera right topic'),
         LaunchArg('track',default_value=['track'],description='track msg topic'),
 
         Node(

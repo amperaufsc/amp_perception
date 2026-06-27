@@ -26,10 +26,10 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        LaunchArg('namespace',default_value=['namespace'],description='namespace for Node'),
+        LaunchArg('namespace',default_value=['disp_map'],description='namespace for Node'),
         LaunchArg('disparity',default_value=['disparity'],description='disparity img topic'),
-        LaunchArg('camera/left',default_value=['camera/left'],description='camera left topic'),
-        LaunchArg('camera/right',default_value=['camera/right'],description='camera right topic'),
+        LaunchArg('camera/left',default_value=['/oak/left/image_raw'],description='camera left topic'),
+        LaunchArg('camera/right',default_value=['/oak/right/image_raw'],description='camera right topic'),
         LaunchArg('left_config_file_name',default_value=['left_config_file_name'],description='Intrinsic/extrinsic left camera matrix yaml file name'),
         LaunchArg('right_config_file_name',default_value=['right_config_file_name'],description='Intrinsic/extrinsic right camera matrix yaml file name'),
     
