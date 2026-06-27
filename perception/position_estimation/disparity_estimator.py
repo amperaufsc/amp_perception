@@ -93,6 +93,13 @@ class DisparityEstimator:
         Y=(((ponto_y-cy)*Z)/focal_length_y)
         
         return X,Y,Z
+    
+    def track_stamped_with_covariance_msg_compose(self, cone_track, header):
+
+        track_stamped = TrackStampedWithCovariance()
+        track_stamped.header = header
+        track_stamped.track = cone_track.track
+        return track_stamped
 
 
         

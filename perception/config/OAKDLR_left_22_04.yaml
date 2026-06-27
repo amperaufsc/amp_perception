@@ -1,0 +1,24 @@
+# Luxonis OAK D LR left camera config file
+image_width: 768
+image_height: 480
+camera_name: left
+
+camera_matrix:
+  data: [[453.7796, 0, 394.6257], [0, 453.6716, 239.3860], [0, 0, 1]]
+
+distortion_coefficients:
+  data: [[0.0151, -0.0387, 0.0, 0.0, 0.0]]
+ 
+projection_matrix:
+  data: [[424.13460836, 0, 387.1713562, 0], [0, 424.13460836, 233.5764637, 0], [0, 0, 1, 0]]
+
+rectification_matrix:
+  data: [[9.99788650e-01, -7.07054930e-04, 2.05464125e-02], [7.25635260e-04, 9.99999335e-01, -8.96868900e-04], [-2.05457647e-02, 9.11588548e-04, 9.99788498e-01]]
+
+rotation_matrix:
+  data: [[1.0000, -0.0007, -0.0041],
+   [0.0007, 1.0000, -0.0018],
+   [0.0041, 0.0018, 1.0000]]
+
+translation_matrix:
+  data: [-150.2344, 0.0072, -3.7036]

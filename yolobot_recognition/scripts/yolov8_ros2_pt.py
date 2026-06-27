@@ -21,8 +21,8 @@ class Camera_subscriber(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            'image',
-            self.camera_callback,
+            '/oak/left/image_raw',
+            self.camera_callback,  
             10)
         self.subscription 
 
@@ -30,11 +30,11 @@ class Camera_subscriber(Node):
         self.img_pub = self.create_publisher(Image, "inferenceimg", 1)
 
         # self.declare_parameter('yolov8_path', 'src/as_amp/yolobot_recognition/scripts/best.pt')
-        self.declare_parameter('yolov8_path', 'src/as_amp/yolobot_recognition/scripts/best_nano.pt')
+        self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best_nano.pt')
 
         self.yolov8_path = self.get_parameter('yolov8_path').value
 
-        self.declare_parameter('confidence_threshold')
+        self.declare_parameter('confidence_threshold',0.5)
         self.confidence_threshold = self.get_parameter('confidence_threshold').value
 
         self.get_logger().info(f"{self.confidence_threshold}")
