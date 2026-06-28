@@ -69,11 +69,11 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
-install(
-        PROGRAMS
-        ros2/position_estimator.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+#install(
+#        PROGRAMS
+#        ros2/position_estimator.py
+#        DESTINATION lib/${PROJECT_NAME}
+#)
 
 install(
         PROGRAMS
@@ -81,11 +81,11 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
-install(
-        PROGRAMS
-        ros2/test_node.py
-        DESTINATION lib/${PROJECT_NAME}
-)
+#install(
+#        PROGRAMS
+#        ros2/test_node.py
+#        DESTINATION lib/${PROJECT_NAME}
+#)
 
 # install(
 #         PROGRAMS
@@ -102,7 +102,7 @@ install(
 install(
         DIRECTORY
         config
-        DESTINATION lib/${PROJECT_NAME}
+        DESTINATION share/${PROJECT_NAME}
 )
 
 install(
