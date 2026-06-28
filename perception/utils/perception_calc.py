@@ -1,6 +1,6 @@
 import numpy as np
 from fs_msgs.msg import TrackStampedWithCovariance, Track, ConeWithCovariance
-from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from sensor_msgs.msg import Image
 import os
 import yaml
@@ -12,7 +12,18 @@ bridge = CvBridge()
 
 class PerceptionProcess:
     # perception_calc(endereço_arq_yaml, disp_img).triangulacao(baseline,yoloinference) = ((X,Y,Z)) -> Posicao do cone no espaco 3D.
-    def __init__(self, baseline, left_config_path, right_config_path):
+    def __init__(self, baseline, left_config_file_name, right_config_file_name):
+
+        left_config_path = os.path.join(
+            get_package_share_directory('perception'),
+            'config', 
+            left_config_file_name
+        )
+        right_config_path = os.path.join(
+            get_package_share_directory('perception'),
+            'config', 
+            right_config_file_name
+        )
 
         self.left_config_yaml = PerceptionProcess.yaml_reader(left_config_path)
         self.right_config_yaml = PerceptionProcess.yaml_reader(right_config_path)
@@ -195,6 +206,7 @@ class PerceptionProcess:
                 
         except FileNotFoundError:
             print("ERRO: Arquivo YAML não encontrado no endereco")
+            print(path)
             return None
         except KeyError:
             print("ERRO: Palavra-chave não encontrada no arquivo")

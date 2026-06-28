@@ -34,8 +34,8 @@ class Cone_Track_Process(LifecycleNode):
         self.time_sync = None
 
         # 1. DECLARAÇÃO DOS PARÂMETROS COM OS VALORES PADRÃO
-        self.declare_parameter("left_camera_info", "OAKDLR_left_22_04.yaml")
-        self.declare_parameter("right_camera_info", "OAKDLR_right_22_04.yaml")
+        self.declare_parameter("left_config_file_name", "OAKDLR_left_22_04.yaml")
+        self.declare_parameter("right_config_file_name", "OAKDLR_right_22_04.yaml")
         self.declare_parameter("baseline", 0.15)
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
@@ -43,8 +43,8 @@ class Cone_Track_Process(LifecycleNode):
             self.get_logger().info("Configurando o nó de percepção...")
 
             # 2. LEITURA DOS VALORES 
-            left_config_file_name = self.get_parameter("left_camera_info").value
-            right_config_file_name = self.get_parameter("right_camera_info").value
+            left_config_file_name = self.get_parameter("left_config_file_name").value
+            right_config_file_name = self.get_parameter("right_config_file_name").value
             baseline = self.get_parameter("baseline").value
 
             # Instancia o processo com os parâmetros capturados
