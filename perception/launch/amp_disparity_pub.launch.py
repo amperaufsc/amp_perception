@@ -12,26 +12,14 @@ import os
 def generate_launch_description():
     arquivo_left = "OAKDLR_left_22_04.yaml"
     arquivo_right = "OAKDLR_right_22_04.yaml"
-    
-    cam_info_left = os.path.join(
-        get_package_share_directory('perception'),
-        'config', 
-        arquivo_left
-    )
-
-    cam_info_right = os.path.join(
-        get_package_share_directory('perception'),
-        'config', 
-        arquivo_right
-    )
 
     return LaunchDescription([
-        LaunchArg('namespace',default_value=['disp_map'],description='namespace for Node'),
+        LaunchArg('namespace',default_value=[''],description='namespace for Node'),
         LaunchArg('disparity',default_value=['disparity'],description='disparity img topic'),
         LaunchArg('camera/left',default_value=['/oak/left/image_raw'],description='camera left topic'),
         LaunchArg('camera/right',default_value=['/oak/right/image_raw'],description='camera right topic'),
-        LaunchArg('left_config_file_name',default_value=['left_config_file_name'],description='Intrinsic/extrinsic left camera matrix yaml file name'),
-        LaunchArg('right_config_file_name',default_value=['right_config_file_name'],description='Intrinsic/extrinsic right camera matrix yaml file name'),
+        LaunchArg('left_config_file_name',default_value=[arquivo_left],description='Intrinsic/extrinsic left camera matrix yaml file name'),
+        LaunchArg('right_config_file_name',default_value=[arquivo_right],description='Intrinsic/extrinsic right camera matrix yaml file name'),
     
         Node(
             package='perception',
@@ -43,10 +31,6 @@ def generate_launch_description():
                 ('disparity', LaunchConfiguration('disparity')),
                 ('camera/left', LaunchConfiguration('camera/left')),
                 ('camera/right', LaunchConfiguration('camera/right')), 
-            ],
-            parameters=[
-                {'left_camera_info': cam_info_left},
-                {'right_camera_info': cam_info_right}
             ]
         )
         ])

@@ -12,27 +12,17 @@ import os
 def generate_launch_description():
     arquivo_left = "OAKDLR_left_22_04.yaml"
     arquivo_right = "OAKDLR_right_22_04.yaml"
-    
-    cam_info_left = os.path.join(
-        get_package_share_directory('perception'),
-        'config', 
-        arquivo_left
-    )
-
-    cam_info_right = os.path.join(
-        get_package_share_directory('perception'),
-        'config', 
-        arquivo_right
-    )
 
     return LaunchDescription([
-        LaunchArg('namespace',default_value=['perception'],description='namespace for Node'),
-        LaunchArg('disparity',default_value=['/disp_map/disparity'],description='disparity img topic'),
-        LaunchArg('inference',default_value=['/yolo/inference'],description='yolo inference topic'),
+        LaunchArg('namespace',default_value=[''],description='namespace for Node'),
+        LaunchArg('disparity',default_value=['disparity'],description='disparity img topic'),
+        LaunchArg('inference',default_value=['inference'],description='yolo inference topic'),
         LaunchArg('camera/left',default_value=['/oak/left/image_raw'],description='camera left topic'),
         LaunchArg('camera/right',default_value=['/oak/right/image_raw'],description='camera right topic'),
         LaunchArg('track',default_value=['track'],description='track msg topic'),
-
+        LaunchArg('left_config_file_name',default_value=[arquivo_left],description='Intrinsic/extrinsic left camera matrix yaml file name'),
+        LaunchArg('right_config_file_name',default_value=[arquivo_right],description='Intrinsic/extrinsic right camera matrix yaml file name'),
+ 
         Node(
             package='perception',
             executable='track_node_pub_life.py',
@@ -45,10 +35,6 @@ def generate_launch_description():
                 ('camera/left', LaunchConfiguration('camera/left')),
                 ('camera/right', LaunchConfiguration('camera/right')), 
                 ('track', LaunchConfiguration('track'))
-            ],
-            parameters=[
-                {'left_camera_info': cam_info_left},
-                {'right_camera_info': cam_info_right}
             ]
         )
         ])
