@@ -43,6 +43,8 @@ class PerceptionProcess:
         imgL_raw_ros_msg = bridge.imgmsg_to_cv2(imgL_raw_ros_msg)
         imgR_raw_ros_msg = bridge.imgmsg_to_cv2(imgR_raw_ros_msg)
         
+        is_disp_map = None
+
         cone_list = []
         bb_yolo = yoloinference.yolov8_inference
         
