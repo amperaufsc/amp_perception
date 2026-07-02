@@ -18,6 +18,14 @@ find_package(yolov8_msgs REQUIRED)
 
 install(
         PROGRAMS
+        launch/amp_perception_lifecycle.launch.py
+        launch/amp_disp_perception_lifecycle.launch.py
+        launch/amp_disparity_pub.launch.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
         lifecycles/disparity_pub_life.py
         DESTINATION lib/${PROJECT_NAME}
 )
