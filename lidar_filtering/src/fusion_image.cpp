@@ -73,7 +73,7 @@ public:
     Eigen::Matrix4f lidar_to_cam_fix;
     lidar_to_cam_fix <<
         0, -1,  0, 0,
-        0,  0,  1, 0,
+        0,  0,  -1, 0,
         1,  0,  0, 0,
         0,  0,  0, 1;
 

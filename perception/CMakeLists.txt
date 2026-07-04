@@ -58,6 +58,11 @@ install(
         position_estimation/keypoints_estimator.py
         DESTINATION lib/${PROJECT_NAME}
 )
+install(
+        PROGRAMS
+        ros2/jpg_and_pcd.py
+        DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
