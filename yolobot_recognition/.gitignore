@@ -1,3 +1,4 @@
 *.pt
 *.engine
 *.onnx
+.env
