@@ -24,6 +24,7 @@ ${PCL_INCLUDE_DIRS}
 # Executável C++
 add_executable(lidar_fusion src/lidar_fusion.cpp)
 add_executable(cone_filtering src/cone_filtering.cpp)
+add_executable(cone_filtering_no_axis_fix src/cone_filtering_no_axis_fix.cpp)
 add_executable(fusion_image src/fusion_image.cpp)
 add_executable(lidar_fusion_simulator src/lidar_fusion_simulator.cpp)
 add_executable(fusion_image_simulator src/fusion_image_simulator.cpp)
@@ -39,6 +40,16 @@ yolov8_msgs
 fs_msgs
 )
 ament_target_dependencies(cone_filtering
+rclcpp
+sensor_msgs
+pcl_conversions
+cv_bridge
+OpenCV
+message_filters
+yolov8_msgs
+fs_msgs
+)
+ament_target_dependencies(cone_filtering_no_axis_fix
 rclcpp
 sensor_msgs
 pcl_conversions
@@ -87,6 +98,11 @@ ${OpenCV_LIBRARIES}
 ${PCL_LIBRARIES}
 yaml-cpp
 )
+target_link_libraries(cone_filtering_no_axis_fix
+${OpenCV_LIBRARIES}
+${PCL_LIBRARIES}
+yaml-cpp
+)
 target_link_libraries(fusion_image
 ${OpenCV_LIBRARIES}
 ${PCL_LIBRARIES}
@@ -115,6 +131,10 @@ cone_filtering
 DESTINATION lib/${PROJECT_NAME}
 )
 install(TARGETS
+cone_filtering_no_axis_fix
+DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS
 fusion_image
 DESTINATION lib/${PROJECT_NAME}
 )
@@ -137,6 +157,7 @@ option(ENABLE_CLUSTERING "Enable point cloud clustering" ON)
 
 if(ENABLE_CLUSTERING)
     target_compile_definitions(cone_filtering PRIVATE ENABLE_CLUSTERING)
+    target_compile_definitions(cone_filtering_no_axis_fix PRIVATE ENABLE_CLUSTERING)
 endif()
 
 ament_package()

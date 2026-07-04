@@ -88,15 +88,8 @@ public:
     RT_extrinsic.block<3,3>(0,0) = R;
     RT_extrinsic.block<3,1>(0,3) = t;
 
-    // Aplica o fix só pra projeção:
-    Eigen::Matrix4f lidar_to_cam_fix;
-    lidar_to_cam_fix <<
-        0, -1,  0, 0,
-        0,  0, -1, 0,
-        1,  0,  0, 0,
-        0,  0,  0, 1;
-
-    RT = lidar_to_cam_fix * RT_extrinsic;  // pra projeção 2D
+    // Usa diretamente a extrinseca calibrada no MATLAB, sem correcao fixa de eixos.
+    RT = RT_extrinsic;  // pra projeção 2D
     camera_matrix = P * R_rect * RT;
 
     RCLCPP_INFO(this->get_logger(), "Transform loaded from YAML.");
@@ -159,7 +152,7 @@ private:
             }
         }
         #ifdef ENABLE_CLUSTERING
-
+          std::cout<<"cu grande"<<std::endl;
           if (!cloud_filt->points.empty()) {
             
             #ifdef X_BASED
