@@ -18,6 +18,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <functional> // sei nao
 #include <stdio.h>
+#include <algorithm>
+#include <limits>
 #include "yolov8_msgs/msg/yolov8_inference.hpp"
 #include "fs_msgs/msg/track_stamped.hpp"
 #include "fs_msgs/msg/cone.hpp"
@@ -28,9 +30,6 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 const float MAX_DISTANCE = 0.1f;
-//#define ENABLE_CLUSTERING
-#define X_BASED
-//#define Z_BASED
 
 using namespace message_filters;
 typedef sync_policies::ApproximateTime<
@@ -97,6 +96,11 @@ public:
   }
 
 private:
+    struct CandidatePoint {
+      pcl::PointXYZ point;
+      float depth;
+    };
+
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg
                     , const std::shared_ptr<const sensor_msgs::msg::Image> image_msg) {
@@ -105,10 +109,6 @@ private:
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>());
       pcl::fromROSMsg(*pointcloud_msg, *cloud_in);
       
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>()); 
-      cloud_filt->header   = cloud_in->header;   // mantém frame_id, stamp
-      cloud_filt->is_dense = cloud_in->is_dense; //mantem is_dense
-
       cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg, "bgr8");        
       
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>());
@@ -116,69 +116,61 @@ private:
       cloud_final->is_dense = cloud_in->is_dense; //mantem is_dense
       
       fs_msgs::msg::TrackStamped track_final;
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());;
+      track_final.header = pointcloud_msg->header;
     
       cloud_final->points.clear();
 
       for (const auto& inf : inference_msg->yolov8_inference) {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filt(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::PointXYZ highest_point;
-        bool first = true;
+        std::vector<CandidatePoint> candidates;
         fs_msgs::msg::Cone cone;
+
+        const float bbox_x_min = static_cast<float>(std::min(inf.top, inf.bottom));
+        const float bbox_x_max = static_cast<float>(std::max(inf.top, inf.bottom));
+        const float bbox_y_min = static_cast<float>(std::min(inf.left, inf.right));
+        const float bbox_y_max = static_cast<float>(std::max(inf.left, inf.right));
 
         for (const auto& pt : cloud_in->points) {
             Eigen::Vector4f X(pt.x, pt.y, pt.z, 1.0f);
+            Eigen::Vector4f p_cam = RT * X;
+            if (p_cam(2) <= 0) continue;
+
             Eigen::Vector3f Y = camera_matrix * X;
             if (Y(2) <= 0) continue;
-            float u = Y(0) / Y(2);
-            float v = Y(1) / Y(2);
+            const float u = Y(0) / Y(2);
+            const float v = Y(1) / Y(2);
 
-            if (u >= inf.top && u <= inf.bottom && 
-                v >= inf.left && v <= inf.right) {
+            if (u >= bbox_x_min && u <= bbox_x_max &&
+                v >= bbox_y_min && v <= bbox_y_max) {
                 
                 #ifndef ENABLE_CLUSTERING
                 cloud_final->points.push_back(pt);
                 #endif
 
                 #ifdef ENABLE_CLUSTERING
-                cloud_filt->points.push_back(pt);
+                candidates.push_back({pt, p_cam(2)});
                 #endif
 
                 cv::circle(cv_ptr->image, cv::Point(static_cast<int>(u), static_cast<int>(v)), 1,cv::Scalar(0, 255, 0), -1);
-                if (first || pt.z > highest_point.z) {
-                    highest_point = pt;
-                    first = false;
-                }
             }
         }
-        #ifdef ENABLE_CLUSTERING
-          std::cout<<"cu grande"<<std::endl;
-          if (!cloud_filt->points.empty()) {
-            
-            #ifdef X_BASED
 
-            float x_min = std::numeric_limits<float>::max();
-            for (const auto& pt : cloud_filt->points)
-                x_min = std::min(x_min, pt.x);
+        #ifdef ENABLE_CLUSTERING
+          if (!candidates.empty()) {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());
+            cloud_aux->header = cloud_in->header;
+            cloud_aux->is_dense = cloud_in->is_dense;
+
+            float min_depth = std::numeric_limits<float>::max();
+            for (const auto& candidate : candidates)
+                min_depth = std::min(min_depth, candidate.depth);
             
-            for (const auto& pt : cloud_filt->points) {
-                if (pt.x <= x_min + MAX_DISTANCE) {
-                    cloud_aux->points.push_back(pt);
-                    cloud_final->points.push_back(pt);
+            for (const auto& candidate : candidates) {
+                if (candidate.depth <= min_depth + MAX_DISTANCE) {
+                    cloud_aux->points.push_back(candidate.point);
+                    cloud_final->points.push_back(candidate.point);
                 }
             }
-            #elif defined(Z_BASED)
-            float z_max = std::numeric_limits<float>::lowest();
-            for (const auto& pt : cloud_filt->points)
-                z_max = std::max(z_max, pt.z);
-            
-            for (const auto& pt : cloud_filt->points) {
-                if (pt.z >= z_max - MAX_DISTANCE) {
-                    cloud_aux->points.push_back(pt);
-                    cloud_final->points.push_back(pt);
-                }
-            }
-            #endif
+
             if (!cloud_aux->points.empty()) {
                 cone = clusterize(cloud_aux, inf.class_name);
                 if (cone.color != fs_msgs::msg::Cone::UNKNOWN) {
@@ -186,8 +178,6 @@ private:
                 }
             }
           }
-          cloud_aux->points.clear();
-
         #endif
       }
 
@@ -221,22 +211,10 @@ private:
 
       float mx = mediana_coord(cloud_aux, 'x');
       float my = mediana_coord(cloud_aux, 'y');
-      float mz = mediana_coord(cloud_aux, 'z');
-
-      // Transforma o ponto médio para o frame da câmera
-      Eigen::Vector4f p_lidar(mx, my, mz, 1.0f);
-      //Eigen::Vector4f p_cam = RT * p_lidar;
 
       cone_out.location.x = mx;
       cone_out.location.y = my;
       cone_out.location.z = 0.0f; // -p_cam(1)
-
-      std::cout<<"x= "<<mx<<std::endl;
-
-      if (mx == 0.0 || my == 0.0 || mz == 0.0){
-        cone_out.color = fs_msgs::msg::Cone::UNKNOWN;
-        return cone_out;
-      }
 
       if (cone_class == "yellow_cone")
           cone_out.color = fs_msgs::msg::Cone::YELLOW;
