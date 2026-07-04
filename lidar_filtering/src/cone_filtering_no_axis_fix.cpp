@@ -96,11 +96,6 @@ public:
   }
 
 private:
-    struct CandidatePoint {
-      pcl::PointXYZ point;
-      float depth;
-    };
-
     void cloud_callback(const std::shared_ptr<const sensor_msgs::msg::PointCloud2> pointcloud_msg
                       , const std::shared_ptr<const yolov8_msgs::msg::Yolov8Inference> inference_msg
                     , const std::shared_ptr<const sensor_msgs::msg::Image> image_msg) {
@@ -121,7 +116,8 @@ private:
       cloud_final->points.clear();
 
       for (const auto& inf : inference_msg->yolov8_inference) {
-        std::vector<CandidatePoint> candidates;
+        std::vector<pcl::PointXYZ> cloud_filt;
+        std::vector<float> candidate_depths;
         fs_msgs::msg::Cone cone;
 
         const float bbox_x_min = static_cast<float>(std::min(inf.top, inf.bottom));
@@ -142,32 +138,35 @@ private:
             if (u >= bbox_x_min && u <= bbox_x_max &&
                 v >= bbox_y_min && v <= bbox_y_max) {
                 
-                #ifndef ENABLE_CLUSTERING
-                cloud_final->points.push_back(pt);
-                #endif
-
+                
                 #ifdef ENABLE_CLUSTERING
-                candidates.push_back({pt, p_cam(2)});
+                cloud_filt.push_back(pt);
+                candidate_depths.push_back(p_cam(2));
+                
+                #else
+                cloud_final->points.push_back(pt);
+                
                 #endif
+              
 
                 cv::circle(cv_ptr->image, cv::Point(static_cast<int>(u), static_cast<int>(v)), 1,cv::Scalar(0, 255, 0), -1);
             }
         }
 
         #ifdef ENABLE_CLUSTERING
-          if (!candidates.empty()) {
+          if (!cloud_filt.empty()) {
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_aux(new pcl::PointCloud<pcl::PointXYZ>());
             cloud_aux->header = cloud_in->header;
             cloud_aux->is_dense = cloud_in->is_dense;
 
             float min_depth = std::numeric_limits<float>::max();
-            for (const auto& candidate : candidates)
-                min_depth = std::min(min_depth, candidate.depth);
+            for (const auto& depth : candidate_depths)
+                min_depth = std::min(min_depth, depth);
             
-            for (const auto& candidate : candidates) {
-                if (candidate.depth <= min_depth + MAX_DISTANCE) {
-                    cloud_aux->points.push_back(candidate.point);
-                    cloud_final->points.push_back(candidate.point);
+            for (size_t i = 0; i < cloud_filt.size(); ++i) {
+                if (candidate_depths[i] <= min_depth + MAX_DISTANCE) {
+                    cloud_aux->points.push_back(cloud_filt[i]);
+                    cloud_final->points.push_back(cloud_filt[i]);
                 }
             }
 
