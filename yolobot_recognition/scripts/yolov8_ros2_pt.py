@@ -30,10 +30,11 @@ class Camera_subscriber(Node):
         self.img_pub = self.create_publisher(Image, "inferenceimg", 1)
 
         # self.declare_parameter('yolov8_path', 'src/as_amp/yolobot_recognition/scripts/best.pt')
-        self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best_nano.pt')
+        self.declare_parameter('yolov8_path', 'src/amp_perception/yolobot_recognition/scripts/best.pt')
 
-        self.yolov8_path = self.get_parameter('yolov8_path').value
+        self.yolov8_path = str(self.get_parameter('yolov8_path').value)
 
+        # TODO: set confidence parameter to be from launch or (exclusive) from the present script
         self.declare_parameter('confidence_threshold',0.5)
         self.confidence_threshold = self.get_parameter('confidence_threshold').value
 
@@ -69,7 +70,7 @@ class Camera_subscriber(Node):
                 self.inference_result.bottom = int(b[2])
                 self.inference_result.right = int(b[3])
                 self.inference_result.confidence = float(box.conf)
-                self.yolov8_inference.yolov8_inference.append(self.inference_result)
+                self.yolov8_inference.yolov8_inference.append(self.inference_result) # type: ignore
 
             #camera_subscriber.get_logger().info(f"{self.yolov8_inference}")
 
@@ -78,7 +79,7 @@ class Camera_subscriber(Node):
 
         self.img_pub.publish(img_msg)
         self.yolov8_pub.publish(self.yolov8_inference)
-        self.yolov8_inference.yolov8_inference.clear()
+        self.yolov8_inference.yolov8_inference.clear() # type: ignore
 
 if __name__ == '__main__':
     rclpy.init(args=None)
