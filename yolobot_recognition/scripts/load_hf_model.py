@@ -30,7 +30,7 @@ def list_repo_files(repo_id: str):
         raise RuntimeError(f"Failed to list files from repo {repo_id}: {exc}")
 
 
-def download_repo_file(repo_id: str, filename: str, local_dir: Path, token: str = None) -> Path:
+def download_repo_file(repo_id: str, filename: str, local_dir: Path, token: str = None) -> Path: # type: ignore
     dest = local_dir / filename
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists():
@@ -48,7 +48,7 @@ def download_repo_file(repo_id: str, filename: str, local_dir: Path, token: str 
     return Path(local_path)
 
 
-def download_all_models_from_repo(repo_id: str, local_dir: Path, token: str = None):
+def download_all_models_from_repo(repo_id: str, local_dir: Path, token: str = None): # type: ignore
     files = list_repo_files(repo_id)
     model_files = [f for f in files if is_model_file(f)]
 
