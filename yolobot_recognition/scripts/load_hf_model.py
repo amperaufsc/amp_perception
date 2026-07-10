@@ -3,6 +3,10 @@ from pathlib import Path
 from huggingface_hub import hf_hub_download, HfApi
 from ultralytics import YOLO
 from dotenv import load_dotenv
+import inspect_n_rename_model
+from ultralytics import YOLO
+import shutil, os
+from huggingface_hub import snapshot_download
 
 load_dotenv()
 
@@ -12,7 +16,6 @@ HF_TOKEN_READ = os.getenv("HF_TOKEN_READ")
 HF_TOKEN_WRITE = os.getenv("HF_TOKEN_WRITE")
 REPO_ID = os.getenv("REPO_ID")
 DOWNLOAD_DIR = Path(__file__).resolve().parent.parent / "models"
-DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 SUPPORTED_MODEL_EXTENSIONS = {".pt", ".pth", ".pth.tar", ".onnx", ".engine", ".tflite", ".pb", ".yaml", ".yml"}
 
@@ -38,7 +41,7 @@ def download_repo_file(repo_id: str, filename: str, local_dir: Path, token: str 
         return dest
 
     print(f"Downloading {filename} from {repo_id} -> {dest}")
-    local_path = hf_hub_download(
+    local_path = snapshot_download(
         repo_id=repo_id,
         filename=filename,
         token=token,
@@ -58,6 +61,7 @@ def download_all_models_from_repo(repo_id: str, local_dir: Path, token: str = No
     downloaded_paths = []
     for filename in sorted(model_files):
         downloaded_paths.append(download_repo_file(repo_id, filename, local_dir, token=token))
+        shutil.move(local_dir, f"../models/{filename}")
 
     return downloaded_paths
 
@@ -82,6 +86,8 @@ def main():
     for path in downloaded_paths:
         if path.suffix.lower() in {".pt", ".pth", ".onnx", ".engine"}:
             models.append(load_model(path))
+    
+    inspect_n_rename_model.main()
 
     print(f"Loaded {len(models)} YOLO models")
     return models
