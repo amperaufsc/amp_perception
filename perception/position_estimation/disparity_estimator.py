@@ -50,10 +50,10 @@ class DisparityEstimator:
                 deviationX = 0.0232*cone.location.x + 0.1204   #linearização do erro da detecção vs distancia no eixo x
                 deviation = np.sqrt(deviationX**2 + deviationZ**2)
                 cone.deviation = deviation
-                
-                cone_list.append(cone)
-                
                 cone.confidence = confidence
+                
+                if cone.location.z < 5:
+                    cone_list.append(cone)                
         
             # cv2.circle(left_img,(centro_x,centro_y),1,(0,0,255))
             # cv2.putText(left_img,str(Z),(centro_x,centro_y),cv2.FONT_HERSHEY_COMPLEX,1,(255,255,255),2,cv2.LINE_AA)
