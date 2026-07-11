@@ -26,7 +26,7 @@ def generate_launch_description():
         Node(
             package='perception',
             executable='track_node_pub_life.py',
-            name='track_node_pub_life',
+            name='perception_lifecycle_node',
             namespace=LaunchConfiguration('namespace'),
             output='screen',
             remappings=[
