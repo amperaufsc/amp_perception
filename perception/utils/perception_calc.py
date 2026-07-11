@@ -109,7 +109,9 @@ class PerceptionProcess:
             
             cone.deviation = deviation
             cone.confidence = confidence
-            cone_list.append(cone)
+
+            if cone.location.z < 5:
+                cone_list.append(cone)
               
         cone_track = TrackStampedWithCovariance()
         cone_track.track = cone_list
