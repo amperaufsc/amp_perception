@@ -37,7 +37,6 @@ class Disparity_Publisher(LifecycleNode):
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
         try:
-            # Corrigido o typo: self.get_lgger() -> self.get_logger()
             self.get_logger().info("Configurando parâmetros e tópicos...")
 
             # 2. LEITURA DOS PARÂMETROS GERAIS
@@ -98,8 +97,6 @@ class Disparity_Publisher(LifecycleNode):
         # TRAVA DE SEGURANÇA: Impede processamento se não estiver no estado ACTIVE
         if not self.is_active_flag:
             return
-
-        start_time = time.time()
         
         # Processamento das imagens
         img_L_rect_msg, img_R_rect_msg = self.calc.approximate_stereo_rectify(img_L, img_R)
@@ -113,13 +110,6 @@ class Disparity_Publisher(LifecycleNode):
         # img_R_rect_msg.header = img_R.header
         
         self.disp_patinho_map.publish(disp_map)
-            
-        end_time = time.time()
-        self.total += end_time - start_time
-        self.periodo += 1
-        periodo_medio = (self.total/self.periodo)
-
-        self.get_logger().info(f"Frequencia media do Callback: {1/periodo_medio:.4f} hz ")
 
     def draw_epilines(self, imgL_rect, imgR_rect):
         n_lines = 20

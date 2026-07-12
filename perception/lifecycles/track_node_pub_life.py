@@ -119,32 +119,20 @@ class Cone_Track_Process(LifecycleNode):
                 x = cone.location.x
                 y = cone.location.y
                 z = cone.location.z
-                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
-                #self.get_logger().info(cone_location %(x,y,z))
 
         else:
             for cone in track.track:
                 x = cone.location.x
                 y = cone.location.y
                 z = cone.location.z
-                cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
-                #self.get_logger().info(cone_location %(x,y,z))
 
         if len(track.track) > 0:
             self.Track_Stamped_Base_Pub.publish(self.Track_Stamped_With_Covariance_Msg_Pub(track, imgL_raw_ros_msg.header))
-
-        end_time = time.time()
-
-        for cone in track.track:
-            if cone.location.x == 0 or cone.location.y == 0 or cone.location.z == 0:
-                self.get_logger().warn("Cone with zero coordinates detected, skipping log.")
-                continue
     
     def Track_Stamped_With_Covariance_Msg_Pub(self, cone_track, header):
         track_stamped = TrackStampedWithCovariance()
         track_stamped.header = header
         track_stamped.track = cone_track.track
-        self.get_logger().info(f"Número de cones encontrados: {len(cone_track.track)}")
         return track_stamped
     
 def main(args=None):
