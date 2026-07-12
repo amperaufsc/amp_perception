@@ -108,8 +108,6 @@ class Cone_Track_Process(LifecycleNode):
         # TRAVA DE SEGURANÇA: Se o nó não estiver ativado, o message_filters descarta os frames e não processa.
         if not self.is_active_flag:
             return
-
-        start_time = time.time()
         
         disp_map = bridge.imgmsg_to_cv2(disp_map, desired_encoding="passthrough")
         track_base_map = self.calc.object_on_map(yoloinference, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
@@ -117,7 +115,6 @@ class Cone_Track_Process(LifecycleNode):
         track = track_base_map[0]
 
         if is_disp_map:
-            self.get_logger().warn("Disparity Map")
             for cone in track.track:
                 x = cone.location.x
                 y = cone.location.y
@@ -126,7 +123,6 @@ class Cone_Track_Process(LifecycleNode):
                 #self.get_logger().info(cone_location %(x,y,z))
 
         else:
-            self.get_logger().warn("Depth Map")
             for cone in track.track:
                 x = cone.location.x
                 y = cone.location.y
@@ -134,15 +130,15 @@ class Cone_Track_Process(LifecycleNode):
                 cone_location = "X = %2fm, Y = %2fm, Z = %2fm" 
                 #self.get_logger().info(cone_location %(x,y,z))
 
-        self.Track_Stamped_Base_Pub.publish(self.Track_Stamped_With_Covariance_Msg_Pub(track, imgL_raw_ros_msg.header))
+        if len(track.track) > 0:
+            self.Track_Stamped_Base_Pub.publish(self.Track_Stamped_With_Covariance_Msg_Pub(track, imgL_raw_ros_msg.header))
 
         end_time = time.time()
 
-        self.total += end_time - start_time
-        self.periodo += 1
-        periodo_medio = (self.total/self.periodo)
-
-        self.get_logger().info(f"Frequencia media do Callback: {1/periodo_medio:.4f} hz ")
+        for cone in track.track:
+            if cone.location.x == 0 or cone.location.y == 0 or cone.location.z == 0:
+                self.get_logger().warn("Cone with zero coordinates detected, skipping log.")
+                continue
     
     def Track_Stamped_With_Covariance_Msg_Pub(self, cone_track, header):
         track_stamped = TrackStampedWithCovariance()

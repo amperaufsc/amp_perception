@@ -82,27 +82,31 @@ class PerceptionProcess:
             roi = disp_map[obj_y1:obj_y2, obj_x1:obj_x2]
             valid = roi[np.isfinite(roi)]
             valid = valid[valid > 0]
-            
+
+            if len(valid) == 0:
+                continue
+
             median_disp = np.median(valid)
-            
-            if len(valid) >= 1:
-                if median_disp > 700:
-                    Z = median_disp / 1000
-                    X, Y = self.x_y_space_measure(Z, center_x, center_y)
-                    is_disp_map = True
-                    cone.location.x = X
-                    cone.location.y = Y
-                    cone.location.z = Z
 
-                else:
-                    X,Y,Z = self.triangulacao(center_y, center_x, median_disp, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
-                    is_disp_map = False
-                    cone.location.x = X
-                    cone.location.y = Y
-                    cone.location.z = Z
+            if median_disp > 700:
+                Z = median_disp / 1000
+                X, Y = self.x_y_space_measure(Z, center_x, center_y)
+                is_disp_map = True
 
+            else:
+                X,Y,Z = self.triangulacao(center_y, center_x, median_disp, disp_map, imgL_raw_ros_msg, imgR_raw_ros_msg)
+                is_disp_map = False
 
-            
+            if not (np.isfinite(X) and np.isfinite(Y) and np.isfinite(Z)):
+                continue
+
+            if Z >= 5 or Z == 0:
+                continue
+
+            cone.location.x = float(X)
+            cone.location.y = float(Y)
+            cone.location.z = float(Z)
+
             deviationZ = 0.0096*cone.location.z + 0.1643   #linearização do erro da detecção vs distancia no eixo z
             deviationX = 0.0232*cone.location.x + 0.1204   #linearização do erro da detecção vs distancia no eixo x
             deviation = np.sqrt(deviationX**2 + deviationZ**2)   
@@ -110,8 +114,7 @@ class PerceptionProcess:
             cone.deviation = deviation
             cone.confidence = confidence
 
-            if cone.location.z < 5:
-                cone_list.append(cone)
+            cone_list.append(cone)
               
         cone_track = TrackStampedWithCovariance()
         cone_track.track = cone_list
